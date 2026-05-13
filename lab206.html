@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Работа 2.06 — Гистерезис ферромагнетика</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#102C26;--navy2:#1a3d35;--navy3:#234f44;
+  --silver:#F7E7CE;--silver2:#f0ddc0;--silver3:#e8d0a8;--silver-bg:#fdf6ea;
+  --white:#ffffff;--ink:#0e1f1b;--ink2:#3a5048;--ink3:#7a9a92;
+  --border:rgba(16,44,38,0.12);--border2:rgba(16,44,38,0.06);
+  --red:#8b2e1a;--red-bg:#fdf2ee;
+  --gold:#8a6020;--gold-bg:#fdf8ed;
+  --green-ok:#1a5a30;--green-bg:#eef7f1;
+  --warn:#7a5c00;--warn-bg:#fdf8ed;
+  --mono:'DM Mono','Courier New',monospace;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --display:'Syne',system-ui,sans-serif;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--silver-bg);color:var(--ink);font-size:14px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--navy);color:var(--silver);padding:0 48px;height:62px;display:flex;align-items:center;gap:24px;position:sticky;top:0;z-index:300}
+.hdr-badge{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;background:rgba(232,238,247,0.12);border:1px solid rgba(232,238,247,0.25);color:var(--silver);padding:4px 12px;border-radius:2px;flex-shrink:0}
+.hdr h1{font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:-0.3px;color:var(--silver);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-meta{margin-left:auto;font-size:11px;color:rgba(232,238,247,0.4);font-weight:300;letter-spacing:0.5px;white-space:nowrap;flex-shrink:0}
+.nav{background:var(--navy);border-bottom:1px solid rgba(232,238,247,0.1);padding:0 48px;display:flex;position:sticky;top:62px;z-index:200;overflow-x:auto;gap:0}
+.nav::-webkit-scrollbar{display:none}
+.nb{font-family:var(--display);font-size:11px;font-weight:500;letter-spacing:1px;color:rgba(232,238,247,0.45);padding:14px 22px;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap;transition:color .2s,border-color .2s;text-transform:uppercase}
+.nb:hover{color:rgba(232,238,247,0.75)}
+.nb.on{color:var(--silver);border-bottom-color:var(--silver2)}
+.wrap{max-width:1120px;margin:0 auto;padding:36px 48px 96px}
+.tab{display:none}.tab.on{display:block}
+.pg-title{font-family:var(--display);font-size:28px;font-weight:800;letter-spacing:-1px;color:var(--navy);margin-bottom:6px;line-height:1.1}
+.pg-sub{font-size:13px;color:var(--ink3);margin-bottom:32px;font-weight:300}
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(13,31,60,.06)}
+.card-hd{padding:13px 20px;border-bottom:1px solid var(--border2);font-family:var(--display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink2);display:flex;align-items:center;justify-content:space-between;background:rgba(232,238,247,.35)}
+.card-hd.dark{background:var(--navy);color:var(--silver);border-bottom:none}
+.card-body{padding:22px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld label{font-family:var(--display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink2)}
+.fld label .u{font-weight:400;text-transform:none;color:var(--ink3);letter-spacing:0}
+.fld input[type=number]{font-family:var(--mono);font-size:14px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s,background .15s;width:100%}
+.fld input:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(13,31,60,.08);background:var(--white)}
+.fld input:disabled{color:var(--ink3);cursor:default;background:rgba(232,238,247,0.5)}
+.fld .hint{font-size:11px;color:var(--ink3);font-weight:300}
+.derived{background:rgba(13,31,60,.04);border:1.5px solid rgba(13,31,60,.14);border-radius:6px;padding:12px 18px;margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.derived .d-lbl{font-family:var(--display);font-size:12px;font-weight:700;color:var(--navy)}
+.derived .d-eq{color:var(--ink3);font-size:12px}
+.derived .d-val{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--navy)}
+.tbl-wrap{overflow-x:auto}
+table.dt{width:100%;border-collapse:collapse;font-size:13px}
+table.dt th{font-family:var(--display);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--silver);background:var(--navy);padding:11px 14px;text-align:center;white-space:nowrap;border-right:1px solid rgba(232,238,247,0.1)}
+table.dt th:last-child{border-right:none}
+table.dt th.sub{background:var(--navy2)}
+table.dt td{border-bottom:1px solid var(--border2);text-align:center;vertical-align:middle;padding:2px 4px}
+table.dt tr:hover td{background:rgba(232,238,247,0.45)}
+table.dt td.rn{font-family:var(--mono);font-size:11px;color:var(--ink3);width:36px;padding:8px 4px;background:rgba(232,238,247,0.3);border-right:1px solid var(--border)}
+table.dt td.cv{font-family:var(--mono);font-size:12px;color:var(--navy);padding:8px 12px;font-weight:500}
+table.dt td.cv.em{color:var(--ink3);font-weight:400}
+table.dt td input{font-family:var(--mono);font-size:13px;border:1.5px solid transparent;border-radius:4px;padding:6px 8px;width:80px;text-align:center;background:transparent;color:var(--ink);outline:none;transition:border-color .12s,background .12s}
+table.dt td input:focus{border-color:var(--navy);background:var(--white)}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--ink3);font-size:16px;padding:4px 8px;border-radius:4px;transition:color .12s,background .12s;line-height:1}
+.del-btn:hover{color:var(--red);background:var(--red-bg)}
+.fm{border:1.5px solid var(--border);border-left:4px solid var(--navy);border-radius:0 6px 6px 0;padding:16px 20px;margin:12px 0;background:rgba(232,238,247,0.18);line-height:1.9}
+.fm .fn{font-family:var(--display);font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}
+.fm .fe{font-family:var(--mono);font-size:15px;font-weight:500;color:var(--navy)}
+.fm .fe.hi{color:var(--red)}
+.fm .fs{font-size:12px;color:var(--ink2);margin-top:4px;font-weight:300}
+.fm .fr{display:inline-block;background:rgba(13,31,60,0.06);border:1.5px solid rgba(13,31,60,0.15);border-radius:5px;padding:7px 16px;font-family:var(--mono);font-size:14px;font-weight:500;color:var(--navy);margin-top:12px}
+.big-r{background:var(--navy);border-radius:8px;padding:22px 28px;display:flex;align-items:center;gap:22px;margin:18px 0;flex-wrap:wrap}
+.big-r .lbl{font-family:var(--display);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(232,238,247,0.55);margin-bottom:5px}
+.big-r .val{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--silver)}
+.big-r .u2{font-size:13px;color:rgba(232,238,247,0.55);margin-left:5px;font-weight:300}
+.big-r .bsep{width:1px;height:48px;background:rgba(232,238,247,0.2);flex-shrink:0}
+.notice{border-radius:6px;padding:11px 16px;font-size:13px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;font-weight:300}
+.notice.info{background:rgba(13,31,60,0.06);border:1.5px solid rgba(13,31,60,0.15);color:var(--navy2)}
+.notice.warn{background:var(--warn-bg);border:1.5px solid #e8d090;color:var(--warn)}
+.notice.good{background:var(--green-bg);border:1.5px solid #a8d8b0;color:var(--green-ok)}
+.notice.bad{background:var(--red-bg);border:1.5px solid #f0b8b0;color:var(--red)}
+.rlines{display:flex;flex-direction:column}
+.rline{display:flex;align-items:baseline;gap:8px 12px;padding:9px 0;border-bottom:1px solid var(--border2);flex-wrap:wrap}
+.rline:last-child{border-bottom:none}
+.rline .rk{font-size:13px;color:var(--ink2);flex:1 1 200px;min-width:0;font-weight:400}
+.rline .rv{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--navy);white-space:nowrap}
+.rline .rv.hi{color:var(--red)}
+.rline .ru{font-size:11px;color:var(--ink3);font-weight:300;white-space:nowrap}
+.rline.sep{padding:4px 0;border-bottom:1px dashed var(--border2);min-height:0}
+.pt{width:100%;border-collapse:collapse;font-size:13px}
+.pt td{padding:9px 16px;border-bottom:1px solid var(--border2)}
+.pt tr:last-child td{border-bottom:none}
+.pt td:first-child{font-family:var(--mono);font-weight:500;color:var(--navy);width:120px;font-size:12px}
+.pt td:nth-child(2){font-family:var(--mono);color:var(--ink);font-weight:400}
+.pt td:nth-child(3){color:var(--ink3);font-size:11px;width:80px}
+.pt td:nth-child(4){color:var(--ink3);font-size:11px;text-align:right;font-weight:300}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:5px;font-family:var(--display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;cursor:pointer;border:1.5px solid transparent;transition:all .15s}
+.btn-outline{background:transparent;color:var(--ink2);border-color:var(--border)}
+.btn-outline:hover{border-color:var(--navy);color:var(--navy)}
+.btn-solid{background:var(--navy);color:var(--silver);border-color:var(--navy)}
+.btn-solid:hover{background:var(--navy2)}
+.btn-gold{background:var(--gold-bg);color:var(--gold);border-color:rgba(138,96,32,0.3)}
+.btn-gold:hover{background:#f5eacc;border-color:var(--gold)}
+.btn-sm{padding:5px 12px;font-size:10px}
+.scale-btn{padding:4px 10px;border:1px solid var(--border);border-radius:4px;background:transparent;font-family:var(--mono);font-size:11px;cursor:pointer;color:var(--ink2);transition:all .12s}
+.scale-btn:hover,.scale-btn.on{background:var(--navy);color:var(--silver);border-color:var(--navy)}
+.ch-wrap{position:relative;background:var(--white);border-radius:6px;padding:8px;display:flex;align-items:center;justify-content:center;min-height:380px}
+.ch-wrap canvas{display:block;max-width:100%;height:auto}
+.ch-empty{font-family:var(--mono);font-size:12px;color:var(--ink3);font-style:italic;padding:80px 20px;text-align:center}
+.export-panel{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 22px;border-top:1px solid var(--border2);background:rgba(232,238,247,.18)}
+.export-panel .ep-title{font-family:var(--display);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:var(--ink3);margin-right:4px}
+.export-panel .ep-fld{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--ink2)}
+.export-panel .ep-fld input{font-family:var(--mono);font-size:12px;border:1.5px solid var(--border);border-radius:4px;padding:5px 8px;width:140px;background:var(--white);color:var(--ink);outline:none}
+.export-panel .ep-fld input:focus{border-color:var(--navy);box-shadow:0 0 0 2px rgba(13,31,60,.08)}
+.export-panel .ep-fld input.sm{width:60px}
+.export-panel .ep-fld select{font-family:var(--mono);font-size:11px;border:1.5px solid var(--border);border-radius:4px;padding:4px 6px;background:var(--white);color:var(--ink);outline:none;cursor:pointer}
+.export-panel .ep-fld select.sm{min-width:110px}
+.export-panel .ep-fld select:focus{border-color:var(--navy);box-shadow:0 0 0 2px rgba(13,31,60,.08)}
+.export-panel .ep-spacer{flex:1}
+.proto{background:var(--navy);border-radius:8px;padding:32px 36px;font-family:var(--mono);font-size:12px;line-height:2;white-space:pre-wrap;overflow-x:auto;max-height:700px;overflow-y:auto;color:rgba(232,238,247,0.85)}
+.proto::-webkit-scrollbar{width:6px;height:6px}
+.proto::-webkit-scrollbar-track{background:rgba(255,255,255,0.05)}
+.proto::-webkit-scrollbar-thumb{background:rgba(232,238,247,0.2);border-radius:3px}
+.toast{position:fixed;bottom:28px;right:28px;background:var(--navy);color:var(--silver);padding:11px 22px;border-radius:6px;font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:0.5px;opacity:0;transform:translateY(10px);transition:all .22s cubic-bezier(.16,1,.3,1);pointer-events:none;z-index:999;box-shadow:0 8px 24px rgba(13,31,60,0.3)}
+.toast.on{opacity:1;transform:translateY(0)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:14px 0}
+.kpi{background:var(--white);border:1.5px solid var(--border);border-left:3.5px solid var(--navy);border-radius:6px;padding:14px 18px}
+.kpi .kpi-lbl{font-family:var(--display);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:6px}
+.kpi .kpi-val{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--navy)}
+.kpi .kpi-u{font-size:11px;color:var(--ink3);font-weight:300;margin-left:4px}
+.kpi.hl{border-left-color:var(--red)}
+.kpi.hl .kpi-val{color:var(--red)}
+@media(max-width:768px){.wrap{padding:18px 18px 72px}.g2,.g3,.g4{grid-template-columns:1fr}.hdr,.nav{padding-left:18px;padding-right:18px}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-badge">2.06</div>
+  <h1>Гистерезис ферромагнетика</h1>
+  <span class="hdr-meta">СПбПУ Петра Великого · Феррит · 24.04.2026</span>
+</header>
+
+<nav class="nav">
+  <button class="nb on" onclick="go('params',this)">Параметры</button>
+  <button class="nb"    onclick="go('limit',this)">Предельная петля</button>
+  <button class="nb"    onclick="go('curve',this)">Осн. кривая B(H)</button>
+  <button class="nb"    onclick="go('mu',this)">Кривая μ(H)</button>
+  <button class="nb"    onclick="go('err',this)">Погрешности</button>
+  <button class="nb"    onclick="go('print',this)">Печать графиков</button>
+  <button class="nb"    onclick="go('proto',this)">Протокол</button>
+</nav>
+
+<div class="wrap">
+
+<!-- ═══ ПАРАМЕТРЫ ═══ -->
+<div id="tab-params" class="tab on">
+  <div class="pg-title">Параметры</div>
+  <div class="pg-sub">Исходные данные со стенда установки. Кольцевой ферритовый сердечник с двумя обмотками; осциллограф работает в режиме фигуры B(H).</div>
+
+  <div class="notice info">
+    <span>ℹ</span>
+    <span>На вход X осциллографа подаётся напряжение с резистора <b>R1</b>, пропорциональное току первичной обмотки и, следовательно, напряжённости <b>H</b>. На вход Y — напряжение с конденсатора <b>C</b> (через резистор <b>R2</b>), пропорциональное индукции <b>B</b>. Размер изображения по экрану задают коэффициенты отклонения <b>a<sub>x</sub></b> и <b>a<sub>y</sub></b>, согласованные с преподавателем.</span>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Сердечник и обмотки</div>
+    <div class="card-body">
+      <div class="g4">
+        <div class="fld">
+          <label>n₁ <span class="u">— витки первичной</span></label>
+          <input type="number" id="p_n1" value="110" step="1" min="1" oninput="recalc()">
+          <div class="hint">намагничивающая обмотка</div>
+        </div>
+        <div class="fld">
+          <label>n₂ <span class="u">— витки вторичной</span></label>
+          <input type="number" id="p_n2" value="40" step="1" min="1" oninput="recalc()">
+          <div class="hint">измерительная обмотка</div>
+        </div>
+        <div class="fld">
+          <label>r <span class="u">— радиус ср. линии, мм</span></label>
+          <input type="number" id="p_r" value="8" step="0.1" min="0.1" oninput="recalc()">
+          <div class="hint">l = 2πr</div>
+        </div>
+        <div class="fld">
+          <label>S <span class="u">— сечение, мм²</span></label>
+          <input type="number" id="p_S" value="23.2" step="0.1" min="0.1" oninput="recalc()">
+          <div class="hint">площадь поперечного сечения</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Цепь и осциллограф</div>
+    <div class="card-body">
+      <div class="g4">
+        <div class="fld">
+          <label>R1 <span class="u">— Ом</span></label>
+          <input type="number" id="p_R1" value="20" step="0.1" min="0.01" oninput="recalc()">
+          <div class="hint">резистор первичной цепи</div>
+        </div>
+        <div class="fld">
+          <label>R2 <span class="u">— кОм</span></label>
+          <input type="number" id="p_R2" value="100" step="0.1" min="0.01" oninput="recalc()">
+          <div class="hint">резистор вторичной цепи</div>
+        </div>
+        <div class="fld">
+          <label>C <span class="u">— мкФ</span></label>
+          <input type="number" id="p_C" value="0.033" step="0.001" min="0.001" oninput="recalc()">
+          <div class="hint">интегрирующий конденсатор</div>
+        </div>
+        <div class="fld">
+          <label>μ₀ <span class="u">— 4π·10⁻⁷ Гн/м</span></label>
+          <input type="number" id="p_mu0" value="1.25664" step="0.00001" disabled>
+          <div class="hint">магнитная постоянная (×10⁻⁶)</div>
+        </div>
+      </div>
+      <div class="g2" style="margin-top:16px">
+        <div class="fld">
+          <label>a<sub>x</sub> <span class="u">— В/дел (канал X)</span></label>
+          <input type="number" id="p_ax" value="0.02" step="0.001" min="0.0001" oninput="recalc()">
+          <div class="hint">коэф. горизонтального отклонения</div>
+        </div>
+        <div class="fld">
+          <label>a<sub>y</sub> <span class="u">— мВ/дел (канал Y)</span></label>
+          <input type="number" id="p_ay" value="0.01" step="0.001" min="0.0001" oninput="recalc()">
+          <div class="hint">коэф. вертикального отклонения (× 10⁻³ В/дел)</div>
+        </div>
+      </div>
+      <div class="derived" id="derived_mx"></div>
+      <div class="derived" id="derived_my"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Сводка параметров (СИ)</div>
+    <div class="card-body" style="padding:0">
+      <table class="pt"><tbody id="pt-body"></tbody></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Ключевые формулы</div>
+    <div class="card-body">
+      <div class="fm">
+        <div class="fn">Напряжённость магнитного поля — из тока первичной обмотки</div>
+        <div class="fe hi">H = m<sub>x</sub> · x,&nbsp;&nbsp; m<sub>x</sub> = n₁·a<sub>x</sub> / (2π·r·R1)</div>
+        <div class="fs">x — горизонтальное отклонение луча в делениях. m<sub>x</sub> — масштаб оси X в А/(м·дел).</div>
+      </div>
+      <div class="fm">
+        <div class="fn">Магнитная индукция — из ЭДС вторичной обмотки через RC-интегратор</div>
+        <div class="fe hi">B = m<sub>y</sub> · y,&nbsp;&nbsp; m<sub>y</sub> = R2·C·a<sub>y</sub> / (S·n₂)</div>
+        <div class="fs">y — вертикальное отклонение луча в делениях. m<sub>y</sub> — масштаб оси Y в Тл/дел. RC-цепочка интегрирует наведённую ЭДС, так что напряжение на C пропорционально B.</div>
+      </div>
+      <div class="fm">
+        <div class="fn">Магнитная проницаемость</div>
+        <div class="fe hi">μ = B / (μ₀·H),&nbsp;&nbsp; μ₀ = 4π·10⁻⁷ Гн/м</div>
+        <div class="fs">Безразмерная. Предельная μ<sub>m</sub> вычисляется по координатам точки C (вершина петли): μ<sub>m</sub> = B<sub>m</sub>/(μ₀·H<sub>m</sub>).</div>
+      </div>
+      <div class="fm">
+        <div class="fn">Параметры предельной петли гистерезиса</div>
+        <div class="fe">B<sub>m</sub> — индукция насыщения (вершина петли)</div>
+        <div class="fe">B<sub>0</sub> — остаточная индукция (при H = 0)</div>
+        <div class="fe">H<sub>c</sub> — коэрцитивная сила (при B = 0)</div>
+        <div class="fs">Измеряются вдвое: 2x<sub>c</sub>, 2y<sub>0</sub> — расстояния через центр петли; x<sub>m</sub>, y<sub>m</sub> — координаты вершины C.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ПРЕДЕЛЬНАЯ ПЕТЛЯ ═══ -->
+<div id="tab-limit" class="tab">
+  <div class="pg-title">Предельная петля гистерезиса</div>
+  <div class="pg-sub">Измеренные на экране осциллографа координаты предельной петли. Все размеры — в делениях сетки экрана.</div>
+
+  <div class="notice info">
+    <span>ℹ</span>
+    <span>На осях, проходящих через центр петли, измеряются <b>2x<sub>c</sub></b> (горизонтальный размер по оси B = 0) и <b>2y<sub>0</sub></b> (вертикальный размер по оси H = 0). Это даёт <b>H<sub>c</sub></b> и <b>B<sub>0</sub></b>. Координаты вершины петли C — это <b>x<sub>m</sub></b>, <b>y<sub>m</sub></b>; они дают <b>H<sub>m</sub></b> и <b>B<sub>m</sub></b>.</span>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Координаты предельной петли</div>
+    <div class="card-body">
+      <div class="g2">
+        <div class="fld">
+          <label>2x<sub>c</sub> <span class="u">— дел (через центр)</span></label>
+          <input type="number" id="m_2xc" value="" step="0.1" min="0" placeholder="дел" oninput="recalc()">
+          <div class="hint">⇒ H<sub>c</sub> = m<sub>x</sub> · x<sub>c</sub>, где x<sub>c</sub> = 2x<sub>c</sub> / 2</div>
+        </div>
+        <div class="fld">
+          <label>2y<sub>0</sub> <span class="u">— дел (через центр)</span></label>
+          <input type="number" id="m_2y0" value="" step="0.1" min="0" placeholder="дел" oninput="recalc()">
+          <div class="hint">⇒ B<sub>0</sub> = m<sub>y</sub> · y<sub>0</sub>, где y<sub>0</sub> = 2y<sub>0</sub> / 2</div>
+        </div>
+      </div>
+      <div class="g2" style="margin-top:16px">
+        <div class="fld">
+          <label>x<sub>m</sub> <span class="u">— дел (вершина C)</span></label>
+          <input type="number" id="m_xm" value="" step="0.1" min="0" placeholder="дел" oninput="recalc()">
+          <div class="hint">⇒ H<sub>m</sub> = m<sub>x</sub> · x<sub>m</sub></div>
+        </div>
+        <div class="fld">
+          <label>y<sub>m</sub> <span class="u">— дел (вершина C)</span></label>
+          <input type="number" id="m_ym" value="" step="0.1" min="0" placeholder="дел" oninput="recalc()">
+          <div class="hint">⇒ B<sub>m</sub> = m<sub>y</sub> · y<sub>m</sub></div>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-gold btn-sm" onclick="fillRealLimit()">★ Данные с занятия</button>
+        <button class="btn btn-outline btn-sm" onclick="fillReal()">Демо-данные</button>
+        <button class="btn btn-outline btn-sm" onclick="clearLimit()">Очистить</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Параметры предельной петли — расчёт</div>
+    <div class="card-body">
+      <div class="rlines" id="lim_calc">
+        <div class="notice warn" style="margin:0"><span>⚠</span><span>Введите координаты предельной петли.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd dark">Итоговые величины</div>
+    <div class="card-body">
+      <div class="kpi-grid" id="lim_kpi">
+        <div class="kpi"><div class="kpi-lbl">B<sub>m</sub> — индукция насыщения</div><div class="kpi-val">— <span class="kpi-u">Тл</span></div></div>
+        <div class="kpi"><div class="kpi-lbl">B₀ — остаточная индукция</div><div class="kpi-val">— <span class="kpi-u">Тл</span></div></div>
+        <div class="kpi hl"><div class="kpi-lbl">H<sub>c</sub> — коэрцитивная сила</div><div class="kpi-val">— <span class="kpi-u">А/м</span></div></div>
+        <div class="kpi"><div class="kpi-lbl">μ<sub>m</sub> — предельная μ</div><div class="kpi-val">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ОСНОВНАЯ КРИВАЯ B(H) ═══ -->
+<div id="tab-curve" class="tab">
+  <div class="pg-title">Основная кривая намагничивания B(H)</div>
+  <div class="pg-sub">Снимается ступенями: уменьшая ток в первичной обмотке, измеряем расстояния 2x и 2y между вершинами частных петель. Кривая — линия через эти вершины.</div>
+
+  <div class="notice info">
+    <span>ℹ</span>
+    <span>Каждая строка таблицы — это одна частная петля. По данным <b>2x</b> и <b>2y</b> вычисляются <b>H = m<sub>x</sub>·x</b> и <b>B = m<sub>y</sub>·y</b>, где x = 2x/2, y = 2y/2. По полученным точкам строится основная кривая.</span>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Таблица 6.1 — частные петли</div>
+    <div class="card-body" style="padding:0">
+      <div class="tbl-wrap">
+        <table class="dt">
+          <thead><tr>
+            <th>№ опыта</th>
+            <th>2x, дел</th>
+            <th>2y, дел</th>
+            <th class="sub">H, А/м</th>
+            <th class="sub">B, Тл</th>
+            <th class="sub">μ</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="t1-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="padding:14px 22px;border-top:1px solid var(--border2);display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-outline btn-sm" onclick="addRow()">+ Строка</button>
+      <button class="btn btn-gold btn-sm" onclick="fillRealCurve()">★ Данные с занятия</button>
+      <button class="btn btn-outline btn-sm" onclick="fillDemo()">Демо-данные</button>
+      <button class="btn btn-outline btn-sm" onclick="clearRows()">Очистить</button>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink3)" id="rows_info"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <span>График B(H) — основная кривая</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="font-family:var(--display);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink3)">Включить:</span>
+        <button id="opt_lim" class="scale-btn on" onclick="toggleLimitOnChart(this)">Точку C</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="ch-wrap"><canvas id="gc_BH"></canvas></div>
+      <div class="hint" style="font-size:11px;color:var(--ink3);margin-top:8px;text-align:center">
+        Наведите курсор на точку — появится подсказка с координатами H, B и μ. Для печатной версии в стиле ВАК — вкладка «Печать графиков».
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ КРИВАЯ μ(H) ═══ -->
+<div id="tab-mu" class="tab">
+  <div class="pg-title">Зависимость μ(H) — кривая Столетова</div>
+  <div class="pg-sub">Магнитная проницаемость μ = B/(μ₀·H), вычисленная по точкам основной кривой намагничивания.</div>
+
+  <div class="notice info">
+    <span>ℹ</span>
+    <span>При росте H проницаемость μ сначала возрастает, достигает максимума, а затем при насыщении быстро убывает. Максимум μ в делах от <b>μ<sub>m</sub></b> и есть предельная магнитная проницаемость, оцениваемая по координатам H<sub>m</sub>, B<sub>m</sub> точки C предельной петли.</span>
+  </div>
+
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <span>График μ(H)</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="font-family:var(--display);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink3)">Масштаб X:</span>
+        <button id="sc_mu_lin" class="scale-btn on" onclick="setMuScale('lin',this)">Лин.</button>
+        <button id="sc_mu_log" class="scale-btn"    onclick="setMuScale('log',this)">Лог.</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="ch-wrap"><canvas id="gc_mu"></canvas></div>
+      <div class="hint" style="font-size:11px;color:var(--ink3);margin-top:8px;text-align:center">
+        Наведите курсор на точку — появится подсказка с координатами H и μ. Для печатной версии — вкладка «Печать графиков».
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Сводка μ(H) по точкам основной кривой</div>
+    <div class="card-body" style="padding:0">
+      <div class="tbl-wrap">
+        <table class="dt">
+          <thead><tr>
+            <th>№</th>
+            <th>H, А/м</th>
+            <th>B, Тл</th>
+            <th class="sub">μ</th>
+            <th class="sub">μ/μ<sub>m</sub></th>
+          </tr></thead>
+          <tbody id="mu-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd dark">Максимум на основной кривой и сравнение с μ<sub>m</sub></div>
+    <div class="card-body">
+      <div class="rlines" id="mu_summary">
+        <div class="notice warn" style="margin:0"><span>⚠</span><span>Введите данные для основной кривой и предельной петли.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ПОГРЕШНОСТИ ═══ -->
+<div id="tab-err" class="tab">
+  <div class="pg-title">Оценка погрешностей</div>
+  <div class="pg-sub">Расчёт абсолютных и относительных погрешностей итоговых величин по правилу переноса погрешностей для функций произведения/частного.</div>
+
+  <div class="notice info">
+    <span>ℹ</span>
+    <span>Погрешности измерений обусловлены: <b>инструментальной погрешностью отсчёта по сетке осциллографа</b> Δ(2x) = Δ(2y) = 0,5 дел; <b>погрешностями номиналов элементов схемы</b> (резисторы 5%, конденсатор 5%, витки ±1, размеры ±1…2%). Для половинных величин (x<sub>c</sub> = 2x<sub>c</sub>/2 и т.д.) Δx<sub>c</sub> = Δy<sub>0</sub> = Δx<sub>m</sub> = Δy<sub>m</sub> = 0,25 дел.</span>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Источники погрешностей</div>
+    <div class="card-body">
+      <div class="g3">
+        <div class="fld">
+          <label>Δ(2x), Δ(2y) <span class="u">— дел</span></label>
+          <input type="number" id="err_div" value="0.5" step="0.05" min="0" oninput="recalcErr()">
+          <div class="hint">отсчёт по сетке экрана; для x<sub>c</sub>, y<sub>0</sub>, x<sub>m</sub>, y<sub>m</sub> — половина: 0,25 дел</div>
+        </div>
+        <div class="fld">
+          <label>δR <span class="u">— %</span></label>
+          <input type="number" id="err_R" value="5" step="0.5" min="0" oninput="recalcErr()">
+          <div class="hint">класс точности резисторов R1, R2</div>
+        </div>
+        <div class="fld">
+          <label>δC <span class="u">— %</span></label>
+          <input type="number" id="err_C" value="5" step="0.5" min="0" oninput="recalcErr()">
+          <div class="hint">допуск конденсатора C</div>
+        </div>
+      </div>
+      <div class="g3" style="margin-top:14px">
+        <div class="fld">
+          <label>δr <span class="u">— %</span></label>
+          <input type="number" id="err_r" value="2" step="0.5" min="0" oninput="recalcErr()">
+          <div class="hint">погрешность размера r (радиус ср. линии)</div>
+        </div>
+        <div class="fld">
+          <label>δS <span class="u">— %</span></label>
+          <input type="number" id="err_S" value="2" step="0.5" min="0" oninput="recalcErr()">
+          <div class="hint">погрешность площади сечения S</div>
+        </div>
+        <div class="fld">
+          <label>δa <span class="u">— %</span></label>
+          <input type="number" id="err_a" value="3" step="0.5" min="0" oninput="recalcErr()">
+          <div class="hint">погрешность коэф. отклонения a<sub>x</sub>, a<sub>y</sub> осциллографа</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Относительные погрешности масштабов</div>
+    <div class="card-body">
+      <div class="fm">
+        <div class="fn">Масштаб H по оси X</div>
+        <div class="fe hi">δm<sub>x</sub> = √(δa<sub>x</sub>² + δr² + δR1²)</div>
+        <div class="fs">m<sub>x</sub> = n₁·a<sub>x</sub>/(2π·r·R1) — погрешности витков пренебрежимы.</div>
+      </div>
+      <div class="fm">
+        <div class="fn">Масштаб B по оси Y</div>
+        <div class="fe hi">δm<sub>y</sub> = √(δR2² + δC² + δa<sub>y</sub>² + δS²)</div>
+        <div class="fs">m<sub>y</sub> = R2·C·a<sub>y</sub>/(S·n₂).</div>
+      </div>
+      <div class="rlines" id="err_scales"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Относительные погрешности отсчёта</div>
+    <div class="card-body">
+      <div class="rlines" id="err_reads">
+        <div class="notice warn" style="margin:0"><span>⚠</span><span>Введите данные предельной петли на вкладке «Предельная петля».</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd dark">Итоговые погрешности (по формуле √(δm² + δотсч²))</div>
+    <div class="card-body">
+      <div class="rlines" id="err_results">
+        <div class="notice warn" style="margin:0"><span>⚠</span><span>Введите данные предельной петли.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Сводная таблица результатов с погрешностями</div>
+    <div class="card-body" style="padding:0">
+      <div class="tbl-wrap">
+        <table class="dt">
+          <thead><tr>
+            <th>Параметр</th>
+            <th>Значение</th>
+            <th>Δ (абс.)</th>
+            <th class="sub">δ, %</th>
+            <th>Запись</th>
+          </tr></thead>
+          <tbody id="err_table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ПЕЧАТЬ ГРАФИКОВ ═══ -->
+<div id="tab-print" class="tab">
+  <div class="pg-title">Печать графиков</div>
+  <div class="pg-sub">Готовые графики для протокола — стиль ВАК, Times New Roman, чёрно-белая графика, печать высокого качества (300 dpi). Скрипт Python генерирует PDF и PNG в той же папке.</div>
+
+  <div class="notice info">
+    <span>ℹ</span>
+    <span>Превью ниже показывает приблизительный вид графиков. <b>Точное оформление</b> (шрифт Times New Roman, выверенные поля по ГОСТ, тики наружу, множитель ×10⁻ⁿ над осью) делает Python-скрипт matplotlib. Параметры оформления настраиваются ниже — они «вшиваются» в скачиваемый файл <code style="font-family:var(--mono);background:rgba(0,0,0,0.07);padding:1px 5px;border-radius:3px">plot_vak.py</code>.</span>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-hd">График 1 — B(H), основная кривая</div>
+      <div class="card-body" style="padding:12px">
+        <div style="background:#f8f8f8;border:1px solid var(--border);border-radius:4px;overflow:hidden">
+          <canvas id="prev_BH" style="width:100%;display:block"></canvas>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--ink3);font-style:italic" id="prev_BH_caption">
+          Рис. 1. Основная кривая намагничивания B(H) ферромагнетика.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">График 2 — μ(H), кривая Столетова</div>
+      <div class="card-body" style="padding:12px">
+        <div style="background:#f8f8f8;border:1px solid var(--border);border-radius:4px;overflow:hidden">
+          <canvas id="prev_mu" style="width:100%;display:block"></canvas>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--ink3);font-style:italic" id="prev_mu_caption">
+          Рис. 2. Зависимость μ от H — кривая Столетова.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd dark">↓ Скачать Python-скрипт</div>
+    <div class="card-body">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="btn btn-solid" onclick="downloadPyScript()">↓ Скачать plot_vak.py</button>
+        <div style="font-size:12px;color:var(--ink3)">Все данные таблицы и параметры предельной петли уже вставлены в скрипт автоматически</div>
+      </div>
+      <div class="notice info" style="margin-bottom:0">
+        <span>ℹ</span>
+        <div>
+          <strong>Как пользоваться:</strong><br>
+          1. Нажмите кнопку — скачается файл <code style="font-family:var(--mono);background:rgba(0,0,0,0.07);padding:1px 5px;border-radius:3px">plot_vak.py</code><br>
+          2. Установите библиотеки, если ещё нет:<br>
+          <code style="font-family:var(--mono);background:rgba(0,0,0,0.07);padding:2px 8px;border-radius:3px;display:inline-block;margin:4px 0">pip install matplotlib numpy</code><br>
+          3. Запустите скрипт:<br>
+          <code style="font-family:var(--mono);background:rgba(0,0,0,0.07);padding:2px 8px;border-radius:3px;display:inline-block;margin:4px 0">python plot_vak.py</code><br>
+          4. В той же папке появятся файлы:<br>
+          <code style="font-family:var(--mono);background:rgba(0,0,0,0.07);padding:2px 8px;border-radius:3px;display:inline-block;margin:4px 0">Fig1_BH.pdf &nbsp; Fig1_BH.png</code><br>
+          <code style="font-family:var(--mono);background:rgba(0,0,0,0.07);padding:2px 8px;border-radius:3px;display:inline-block;margin:4px 0">Fig2_mu_H.pdf &nbsp; Fig2_mu_H.png</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Параметры скрипта — настройка оформления</div>
+    <div class="card-body">
+      <div style="font-family:var(--display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink2);margin-bottom:10px">График 1 — B(H)</div>
+      <div class="g3" style="gap:14px">
+        <div class="fld">
+          <label>Подпись рис. 1</label>
+          <input type="text" id="vak_BH_caption" value="Основная кривая намагничивания B(H) ферромагнетика" oninput="updPrintCaptions()">
+        </div>
+        <div class="fld">
+          <label>№ рис. 1</label>
+          <input type="number" id="vak_BH_num" value="1" min="1" step="1" oninput="updPrintCaptions()">
+        </div>
+        <div class="fld">
+          <label>Положение легенды</label>
+          <select id="vak_BH_corner" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none">
+            <option value="upper left">сверху-слева</option>
+            <option value="upper right">сверху-справа</option>
+            <option value="lower left" selected>снизу-слева</option>
+            <option value="lower right">снизу-справа</option>
+          </select>
+        </div>
+      </div>
+      <div class="g3" style="gap:14px;margin-top:14px">
+        <div class="fld">
+          <label>Включить точку C</label>
+          <select id="vak_BH_lim" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none">
+            <option value="1" selected>да — отметить вершину C</option>
+            <option value="0">нет</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Маркеры</label>
+          <select id="vak_BH_marker" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none">
+            <option value="o" selected>● круги</option>
+            <option value="s">■ квадраты</option>
+            <option value="^">▲ треугольники</option>
+            <option value="D">◆ ромбы</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Сетка</label>
+          <select id="vak_BH_grid" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none">
+            <option value="1" selected>да — пунктирная серая</option>
+            <option value="0">нет</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="font-family:var(--display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink2);margin-top:24px;margin-bottom:10px">График 2 — μ(H)</div>
+      <div class="g3" style="gap:14px">
+        <div class="fld">
+          <label>Подпись рис. 2</label>
+          <input type="text" id="vak_mu_caption" value="Зависимость μ от H — кривая Столетова" oninput="updPrintCaptions()">
+        </div>
+        <div class="fld">
+          <label>№ рис. 2</label>
+          <input type="number" id="vak_mu_num" value="2" min="1" step="1" oninput="updPrintCaptions()">
+        </div>
+        <div class="fld">
+          <label>Положение легенды</label>
+          <select id="vak_mu_corner" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none">
+            <option value="upper left">сверху-слева</option>
+            <option value="upper right" selected>сверху-справа</option>
+            <option value="lower left">снизу-слева</option>
+            <option value="lower right">снизу-справа</option>
+          </select>
+        </div>
+      </div>
+      <div class="g3" style="gap:14px;margin-top:14px">
+        <div class="fld">
+          <label>Включить точку C</label>
+          <select id="vak_mu_lim" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none">
+            <option value="1" selected>да — отметить μₘ</option>
+            <option value="0">нет</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Шкала X</label>
+          <select id="vak_mu_xscale" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none">
+            <option value="linear" selected>линейная</option>
+            <option value="log">логарифмическая</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Сетка</label>
+          <select id="vak_mu_grid" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none">
+            <option value="1" selected>да — пунктирная серая</option>
+            <option value="0">нет</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="font-family:var(--display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink2);margin-top:24px;margin-bottom:10px">Общие параметры обоих графиков</div>
+      <div class="g3" style="gap:14px">
+        <div class="fld">
+          <label>Формат листа</label>
+          <select id="vak_paper" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none">
+            <option value="A4L" selected>A4 альбомный (297×210 мм)</option>
+            <option value="A4P">A4 портретный (210×297 мм)</option>
+            <option value="A5L">A5 альбомный (210×148 мм)</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Шрифт</label>
+          <select id="vak_font" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none">
+            <option value="Times New Roman" selected>Times New Roman</option>
+            <option value="DejaVu Serif">DejaVu Serif</option>
+            <option value="Liberation Serif">Liberation Serif</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>DPI растра</label>
+          <input type="number" id="vak_dpi" value="300" min="100" max="600" step="50">
+        </div>
+      </div>
+      <div class="g3" style="gap:14px;margin-top:14px">
+        <div class="fld">
+          <label>Сплайн через точки</label>
+          <select id="vak_spline" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none" onchange="buildPrintPreview()">
+            <option value="monotone" selected>монотонный кубический (PCHIP)</option>
+            <option value="none">прямые отрезки (ломаная)</option>
+          </select>
+          <div class="hint">плавная кривая без выбросов; PCHIP не «прострелит» точки</div>
+        </div>
+        <div class="fld">
+          <label>Начало осей</label>
+          <select id="vak_axes_from_0" style="font-family:var(--mono);font-size:13px;background:var(--silver-bg);border:1.5px solid var(--border);border-radius:5px;padding:9px 13px;color:var(--ink);outline:none">
+            <option value="1" selected>от нуля (0, 0)</option>
+            <option value="0">автоматически</option>
+          </select>
+          <div class="hint">принудительно начинать оси X и Y от нуля</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Параметры оформления (фиксированные ГОСТ 7.32)</div>
+    <div class="card-body">
+      <div class="rlines">
+        <div class="rline"><div class="rk">Поля (ГОСТ 7.32-2017)</div><div class="rv">лево 30 мм · право 10 мм · верх 20 мм · низ 20 мм</div></div>
+        <div class="rline"><div class="rk">Шрифт</div><div class="rv">10 pt (оси), 9 pt (числа, легенда)</div></div>
+        <div class="rline"><div class="rk">Толщина осей и рамки</div><div class="rv">1.0 pt</div></div>
+        <div class="rline"><div class="rk">Маркеры</div><div class="rv">4 pt, чёрные</div></div>
+        <div class="rline"><div class="rk">Линии</div><div class="rv">сплошная чёрная (кривая), пунктир бордовый (опорная точка C)</div></div>
+        <div class="rline"><div class="rk">Интерполяция</div><div class="rv">монотонный кубический сплайн (PCHIP, Fritsch–Carlson 1980) — реализован прямо в скрипте, scipy не нужен</div></div>
+        <div class="rline"><div class="rk">Тики</div><div class="rv">внутрь, все 4 стороны рамки, мажор+минор</div></div>
+        <div class="rline"><div class="rk">Формат PDF</div><div class="rv">векторный, шрифты TrueType (pdf.fonttype = 42)</div></div>
+        <div class="rline"><div class="rk">Подпись «Рис. N. ...»</div><div class="rv">курсивом, под графиком, по центру</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ПРОТОКОЛ ═══ -->
+<div id="tab-proto" class="tab">
+  <div class="pg-title">Протокол</div>
+  <div class="pg-sub">Вывод напишите самостоятельно. Все ключевые данные и шаги вычислений — ниже.</div>
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+    <button class="btn btn-solid" onclick="copyProto()">Скопировать</button>
+    <button class="btn btn-outline" onclick="buildProtocol();showToast('Обновлено ✓')">Обновить</button>
+  </div>
+  <div class="proto" id="proto">Введите данные и перейдите на эту вкладку.</div>
+</div>
+
+</div><!-- /wrap -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  ФОРМАТИРОВАНИЕ — экспонента строго через 10^n
+// ═══════════════════════════════════════════════════════════
+// HTML-версия (через <sup>): экспонента ТОЛЬКО для |x|<0.01 или |x|>=10000
+function sciH(v, sig=4){
+  if(!isFinite(v)) return '—';
+  if(v===0) return '0';
+  const sign = v<0 ? '−' : '';
+  const av = Math.abs(v);
+  // Обычная запись для удобочитаемых чисел
+  if(av >= 0.01 && av < 10000){
+    return sign + parseFloat(av.toPrecision(sig)).toString();
+  }
+  // Экспонента для очень больших/малых
+  const e = Math.floor(Math.log10(av));
+  const m = parseFloat((av/Math.pow(10,e)).toPrecision(sig));
+  const mFinal = m >= 10 ? parseFloat((av/Math.pow(10,e+1)).toPrecision(sig)) : m;
+  const eFinal = m >= 10 ? e+1 : e;
+  return `${sign}${mFinal}·10<sup>${eFinal}</sup>`;
+}
+// Текстовая версия (для протокола): экспонента ТОЛЬКО для |x|<0.01 или |x|>=10000
+function sciT(v, sig=4){
+  if(!isFinite(v)) return '—';
+  if(v===0) return '0';
+  const sign = v<0 ? '-' : '';
+  const av = Math.abs(v);
+  // Обычная запись для удобочитаемых чисел
+  if(av >= 0.01 && av < 10000){
+    return sign + parseFloat(av.toPrecision(sig)).toString();
+  }
+  // Экспонента для очень больших/малых
+  const e = Math.floor(Math.log10(av));
+  const m = parseFloat((av/Math.pow(10,e)).toPrecision(sig));
+  const mFinal = m >= 10 ? parseFloat((av/Math.pow(10,e+1)).toPrecision(sig)) : m;
+  const eFinal = m >= 10 ? e+1 : e;
+  return `${sign}${mFinal}*10^${eFinal}`;
+}
+// Форматтер для тиков графика
+const SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'};
+const toSup=s=>String(s).split('').map(c=>SUP[c]||c).join('');
+function fmtTick(v){
+  if(!isFinite(v)) return '';
+  if(v===0) return '0';
+  const av=Math.abs(v), sign=v<0?'−':'';
+  if(av>=0.01 && av<10000) return sign+parseFloat(av.toPrecision(4)).toString();
+  const e=Math.floor(Math.log10(av));
+  const m=parseFloat((av/Math.pow(10,e)).toPrecision(3));
+  const mFix = m>=10 ? parseFloat((av/Math.pow(10,e+1)).toPrecision(3)) : m;
+  const eFix = m>=10 ? e+1 : e;
+  return sign+mFix+'·10'+toSup(String(eFix));
+}
+function f3(v){return isFinite(v)?parseFloat(v.toPrecision(3)).toString():'—';}
+function f4(v){return isFinite(v)?parseFloat(v.toPrecision(4)).toString():'—';}
+function f5(v){return isFinite(v)?parseFloat(v.toPrecision(5)).toString():'—';}
+function s(id,html){const el=document.getElementById(id);if(el)el.innerHTML=html;}
+function sv(id,txt){const el=document.getElementById(id);if(el)el.textContent=txt;}
+
+// ═══════════════════════════════════════════════════════════
+//  ПАРАМЕТРЫ
+// ═══════════════════════════════════════════════════════════
+function getP(){
+  const n1 = parseFloat(document.getElementById('p_n1').value);
+  const n2 = parseFloat(document.getElementById('p_n2').value);
+  const r  = parseFloat(document.getElementById('p_r').value)*1e-3; // мм -> м
+  const Sm = parseFloat(document.getElementById('p_S').value)*1e-6; // мм² -> м²
+  const R1 = parseFloat(document.getElementById('p_R1').value);     // Ом
+  const R2 = parseFloat(document.getElementById('p_R2').value)*1e3; // кОм -> Ом
+  const C  = parseFloat(document.getElementById('p_C').value)*1e-6; // мкФ -> Ф
+  const ax = parseFloat(document.getElementById('p_ax').value);     // В/дел
+  const ay = parseFloat(document.getElementById('p_ay').value)*1e-3; // мВ/дел -> В/дел
+  const mu0 = 4*Math.PI*1e-7; // Гн/м
+  const l  = 2*Math.PI*r;
+  // m_x = n1·a_x / (2π·r·R1)  →  A/(м·дел)
+  const mx = (n1*ax)/(l*R1);
+  // m_y = R2·C·a_y / (S·n2)  →  Тл/дел
+  const my = (R2*C*ay)/(Sm*n2);
+  return {n1,n2,r,l,Sm,R1,R2,C,ax,ay,mu0,mx,my};
+}
+
+function updParams(){
+  const p=getP();
+  // Карточки с производными m_x и m_y
+  s('derived_mx',
+    `<span class="d-lbl">m<sub>x</sub> = n₁·a<sub>x</sub> / (2π·r·R1)</span>
+     <span class="d-eq">=</span>
+     <span class="d-val">${sciH(p.mx,4)}</span>
+     <span style="font-size:11px;color:var(--ink3)">А/(м·дел) &nbsp;→&nbsp; H = m<sub>x</sub>·x</span>`
+  );
+  s('derived_my',
+    `<span class="d-lbl">m<sub>y</sub> = R2·C·a<sub>y</sub> / (S·n₂)</span>
+     <span class="d-eq">=</span>
+     <span class="d-val">${sciH(p.my,4)}</span>
+     <span style="font-size:11px;color:var(--ink3)">Тл/дел &nbsp;→&nbsp; B = m<sub>y</sub>·y</span>`
+  );
+  s('pt-body',[
+    ['n₁',           f4(p.n1),    '—',         'витки первичной обмотки'],
+    ['n₂',           f4(p.n2),    '—',         'витки вторичной обмотки'],
+    ['r',            sciH(p.r,4), 'м',         'радиус средней линии'],
+    ['l = 2πr',      sciH(p.l,4), 'м',         'длина средней линии'],
+    ['S',            sciH(p.Sm,4),'м²',        'площадь сечения'],
+    ['R1',           f4(p.R1),    'Ом',        'резистор первичной цепи'],
+    ['R2',           sciH(p.R2,4),'Ом',        'резистор вторичной цепи'],
+    ['C',            sciH(p.C,4), 'Ф',         'интегрирующий конденсатор'],
+    ['a_x',          f4(p.ax),    'В/дел',     'коэф. отклонения по X'],
+    ['a_y',          f4(p.ay),    'В/дел',     'коэф. отклонения по Y'],
+    ['μ₀',           sciH(p.mu0,4),'Гн/м',     'магнитная постоянная'],
+    ['m_x',          sciH(p.mx,4),'А/(м·дел)', 'масштаб H = m_x·x'],
+    ['m_y',          sciH(p.my,4),'Тл/дел',    'масштаб B = m_y·y'],
+  ].map(([lbl,val,unit,comm])=>
+    `<tr><td>${lbl}</td><td>${val}</td><td>${unit}</td><td>${comm}</td></tr>`
+  ).join(''));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ПРЕДЕЛЬНАЯ ПЕТЛЯ — РАСЧЁТ
+// ═══════════════════════════════════════════════════════════
+function getLimitMeas(){
+  const v = id => parseFloat(document.getElementById(id).value);
+  return {
+    twoXc: v('m_2xc'),
+    twoY0: v('m_2y0'),
+    xm:    v('m_xm'),
+    ym:    v('m_ym'),
+  };
+}
+function calcLimit(){
+  const p=getP();
+  const m=getLimitMeas();
+  const xc = isFinite(m.twoXc) ? m.twoXc/2 : NaN;
+  const y0 = isFinite(m.twoY0) ? m.twoY0/2 : NaN;
+  const Hc = isFinite(xc) ? p.mx*xc : NaN;
+  const B0 = isFinite(y0) ? p.my*y0 : NaN;
+  const Hm = isFinite(m.xm) ? p.mx*m.xm : NaN;
+  const Bm = isFinite(m.ym) ? p.my*m.ym : NaN;
+  const muM = (isFinite(Bm)&&isFinite(Hm)&&Hm>0) ? Bm/(p.mu0*Hm) : NaN;
+  return {xc,y0,Hc,B0,Hm,Bm,muM,...m};
+}
+function fillReal(){
+  // Демо-значения предельной петли (типичные для ферритового сердечника)
+  document.getElementById('m_2xc').value = '1.6';
+  document.getElementById('m_2y0').value = '3.4';
+  document.getElementById('m_xm').value  = '4.0';
+  document.getElementById('m_ym').value  = '2.8';
+  recalc();
+  showToast('Демо предельной петли загружено ✓');
+}
+function clearLimit(){
+  ['m_2xc','m_2y0','m_xm','m_ym'].forEach(id=>document.getElementById(id).value='');
+  recalc();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ОСНОВНАЯ КРИВАЯ — ТАБЛИЦА
+// ═══════════════════════════════════════════════════════════
+let rows=[];
+
+function renderT1(){
+  const tbody=document.getElementById('t1-tbody');
+  if(!tbody)return;
+  const p=getP();
+  tbody.innerHTML=rows.map((r,i)=>{
+    const tx=parseFloat(r.x2), ty=parseFloat(r.y2);
+    const H = isFinite(tx) ? p.mx*tx/2 : NaN;
+    const B = isFinite(ty) ? p.my*ty/2 : NaN;
+    const mu = (isFinite(H)&&isFinite(B)&&H>0) ? B/(p.mu0*H) : NaN;
+    return `<tr>
+      <td class="rn">${i+1}</td>
+      <td><input type="number" placeholder="дел" value="${r.x2}" style="width:80px"
+          oninput="rows[${i}].x2=this.value;recalcAll()"></td>
+      <td><input type="number" placeholder="дел" value="${r.y2}" style="width:80px"
+          oninput="rows[${i}].y2=this.value;recalcAll()"></td>
+      <td class="cv">${isFinite(H)?sciH(H,4):'—'}</td>
+      <td class="cv">${isFinite(B)?f4(B):'—'}</td>
+      <td class="cv">${isFinite(mu)?f4(mu):'—'}</td>
+      <td><button class="del-btn" onclick="delRow(${i})">×</button></td>
+    </tr>`;
+  }).join('');
+  const valid = rows.filter(r=>isFinite(parseFloat(r.x2))&&isFinite(parseFloat(r.y2))&&parseFloat(r.x2)>0).length;
+  sv('rows_info', `${valid} из ${rows.length} строк заполнено`);
+}
+function addRow(){rows.push({x2:'',y2:''});renderT1();recalcAll();}
+function delRow(i){rows.splice(i,1);renderT1();recalcAll();}
+function clearRows(){rows.forEach(r=>{r.x2='';r.y2='';});renderT1();recalcAll();}
+
+// Демо-данные основной кривой (типичный ход для феррита)
+const DEMO_ROWS=[
+  [0.4, 0.3],
+  [0.8, 0.7],
+  [1.2, 1.1],
+  [1.6, 1.5],
+  [2.0, 1.9],
+  [2.6, 2.2],
+  [3.2, 2.5],
+  [4.0, 2.7],
+  [5.0, 2.85],
+  [6.0, 2.95],
+  [7.0, 3.0],
+  [8.0, 3.05],
+];
+
+// ★ Реальные данные занятия в лаборатории (СПбПУ, 24.04.2026)
+// Точка №1 — предельная петля (наибольшая амплитуда),
+// далее частные петли с уменьшающимся током
+const REAL_ROWS=[
+  [8.0, 6.0],
+  [7.1, 5.0],
+  [5.9, 4.8],
+  [5.6, 4.3],
+  [5.2, 5.2],
+  [4.7, 4.7],
+  [3.9, 4.0],
+  [3.5, 3.5],
+  [3.2, 3.3],
+  [2.5, 2.4],
+  [1.9, 2.2],
+];
+function fillRealCurve(){
+  rows = REAL_ROWS.map(d=>({x2:String(d[0]), y2:String(d[1])}));
+  renderT1();
+  recalcAll();
+  showToast('Данные занятия 24.04.2026 загружены ✓');
+}
+
+function fillDemo(){
+  rows = DEMO_ROWS.map(d=>({x2:String(d[0]), y2:String(d[1])}));
+  renderT1();
+  recalcAll();
+  showToast('Демо-данные основной кривой загружены ✓');
+}
+
+// ★ Реальные данные занятия — предельная петля (24.04.2026)
+// 2x_c = 2.5 дел  (горизонтальный размер через центр петли — даёт H_c)
+// 2y_0 = 4.5 дел  (вертикальный размер через центр петли — даёт B_0)
+// x_m  = 4   дел, y_m = 3 дел  (координаты вершины C — дают H_m, B_m)
+function fillRealLimit(){
+  document.getElementById('m_2xc').value = '2.5';
+  document.getElementById('m_2y0').value = '4.5';
+  document.getElementById('m_xm').value  = '4.0';
+  document.getElementById('m_ym').value  = '3.0';
+  recalc();
+  showToast('Данные занятия 24.04.2026 загружены ✓');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ВСЁ В КУЧУ — ОБРАБОТКА И ГРАФИКИ
+// ═══════════════════════════════════════════════════════════
+function getCurvePoints(){
+  const p=getP();
+  return rows.map((r,i)=>{
+    const x2=parseFloat(r.x2), y2=parseFloat(r.y2);
+    if(!isFinite(x2)||!isFinite(y2)||x2<=0||y2<=0) return null;
+    const x = x2/2, y = y2/2;
+    const H = p.mx*x, B = p.my*y;
+    const mu = H>0 ? B/(p.mu0*H) : NaN;
+    return {idx:i, x2, y2, x, y, H, B, mu};
+  }).filter(Boolean);
+}
+
+let scaleMu='lin';
+let showLimitOnChart=true;
+
+function recalcAll(){
+  updParams();
+  const lim = calcLimit();
+  renderLimitCalc(lim);
+  renderLimitKpi(lim);
+  const pts = getCurvePoints();
+  buildBHChart(pts, lim);
+  buildMuChart(pts, lim);
+  renderMuTable(pts, lim);
+  renderMuSummary(pts, lim);
+  recalcErr();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ОТРИСОВКА — ПРЕДЕЛЬНАЯ ПЕТЛЯ
+// ═══════════════════════════════════════════════════════════
+function renderLimitCalc(lim){
+  const p=getP();
+  const have = isFinite(lim.twoXc)||isFinite(lim.twoY0)||isFinite(lim.xm)||isFinite(lim.ym);
+  if(!have){
+    s('lim_calc','<div class="notice warn" style="margin:0"><span>⚠</span><span>Введите координаты предельной петли.</span></div>');
+    return;
+  }
+  let html = '';
+  html += `<div class="rline"><div class="rk">m<sub>x</sub> (масштаб H)</div>
+    <div class="rv">${sciH(p.mx,4)} А/(м·дел)</div></div>`;
+  html += `<div class="rline"><div class="rk">m<sub>y</sub> (масштаб B)</div>
+    <div class="rv">${sciH(p.my,4)} Тл/дел</div></div>`;
+  html += `<div class="rline sep"></div>`;
+  // Hc
+  if(isFinite(lim.twoXc)){
+    html += `<div class="rline"><div class="rk">x<sub>c</sub> = 2x<sub>c</sub> / 2 = ${f4(lim.twoXc)} / 2</div>
+      <div class="rv">${f4(lim.xc)} дел</div></div>`;
+    html += `<div class="rline"><div class="rk">H<sub>c</sub> = m<sub>x</sub> · x<sub>c</sub> = ${sciH(p.mx,4)} · ${f4(lim.xc)}</div>
+      <div class="rv hi"><b>${sciH(lim.Hc,4)} А/м</b></div></div>`;
+    html += `<div class="rline sep"></div>`;
+  }
+  // B0
+  if(isFinite(lim.twoY0)){
+    html += `<div class="rline"><div class="rk">y₀ = 2y₀ / 2 = ${f4(lim.twoY0)} / 2</div>
+      <div class="rv">${f4(lim.y0)} дел</div></div>`;
+    html += `<div class="rline"><div class="rk">B₀ = m<sub>y</sub> · y₀ = ${sciH(p.my,4)} · ${f4(lim.y0)}</div>
+      <div class="rv hi"><b>${f4(lim.B0)} Тл</b></div></div>`;
+    html += `<div class="rline sep"></div>`;
+  }
+  // Hm, Bm
+  if(isFinite(lim.xm)){
+    html += `<div class="rline"><div class="rk">H<sub>m</sub> = m<sub>x</sub> · x<sub>m</sub> = ${sciH(p.mx,4)} · ${f4(lim.xm)}</div>
+      <div class="rv"><b>${sciH(lim.Hm,4)} А/м</b></div></div>`;
+  }
+  if(isFinite(lim.ym)){
+    html += `<div class="rline"><div class="rk">B<sub>m</sub> = m<sub>y</sub> · y<sub>m</sub> = ${sciH(p.my,4)} · ${f4(lim.ym)}</div>
+      <div class="rv"><b>${f4(lim.Bm)} Тл</b></div></div>`;
+  }
+  // muM
+  if(isFinite(lim.muM)){
+    html += `<div class="rline sep"></div>`;
+    html += `<div class="rline"><div class="rk">μ<sub>m</sub> = B<sub>m</sub> / (μ₀·H<sub>m</sub>) = ${f4(lim.Bm)} / (${sciH(p.mu0,4)}·${sciH(lim.Hm,4)})</div>
+      <div class="rv hi"><b>${f4(lim.muM)}</b></div></div>`;
+  }
+  s('lim_calc', html);
+}
+
+function renderLimitKpi(lim){
+  const items = [
+    {lbl:'B<sub>m</sub> — индукция насыщения', val: isFinite(lim.Bm)?f4(lim.Bm):'—', u:'Тл'},
+    {lbl:'B₀ — остаточная индукция',           val: isFinite(lim.B0)?f4(lim.B0):'—', u:'Тл'},
+    {lbl:'H<sub>c</sub> — коэрцитивная сила',   val: isFinite(lim.Hc)?sciH(lim.Hc,4):'—', u:'А/м', hl:true},
+    {lbl:'μ<sub>m</sub> — предельная μ',         val: isFinite(lim.muM)?f4(lim.muM):'—', u:''},
+  ];
+  s('lim_kpi', items.map(it=>
+    `<div class="kpi${it.hl?' hl':''}"><div class="kpi-lbl">${it.lbl}</div>
+      <div class="kpi-val">${it.val}${it.u?`<span class="kpi-u">${it.u}</span>`:''}</div></div>`
+  ).join(''));
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  ГРАФИК B(H) — основная кривая намагничивания (Chart.js)
+// ═══════════════════════════════════════════════════════════
+let bhChart=null;
+function toggleLimitOnChart(btn){
+  showLimitOnChart = !showLimitOnChart;
+  btn.classList.toggle('on', showLimitOnChart);
+  const pts = getCurvePoints();
+  buildBHChart(pts, calcLimit());
+}
+
+function buildBHChart(pts, lim){
+  const ctx=document.getElementById('gc_BH'); if(!ctx) return;
+  if(bhChart){ bhChart.destroy(); bhChart=null; }
+
+  const haveLim = showLimitOnChart && isFinite(lim.Hm) && isFinite(lim.Bm);
+  if(!pts.length && !haveLim){
+    const c2 = ctx.getContext('2d');
+    c2.clearRect(0,0,ctx.width,ctx.height);
+    ctx.style.display = 'none';
+    let empty = ctx.parentNode.querySelector('.ch-empty');
+    if(!empty){
+      empty = document.createElement('div');
+      empty.className = 'ch-empty';
+      empty.textContent = 'Введите данные для построения графика';
+      ctx.parentNode.appendChild(empty);
+    }
+    return;
+  }
+  ctx.style.display = 'block';
+  const empty = ctx.parentNode.querySelector('.ch-empty');
+  if(empty) empty.remove();
+
+  // Сортировка по H для непрерывной линии
+  const sorted = [...pts].sort((a,b)=>a.H-b.H);
+
+  const datasets = [{
+    label: 'Основная кривая B(H)',
+    data: sorted.map(p=>({x:p.H, y:p.B, _row:p.idx+1, _mu:p.mu})),
+    backgroundColor:'#234f44', borderColor:'#102C26',
+    pointRadius:5, pointHoverRadius:7,
+    showLine:true, borderWidth:1.5,
+    cubicInterpolationMode:'monotone'  // монотонный кубический сплайн (Фритч-Карлсон) — не «прострелит» точки
+  }];
+
+  if(haveLim){
+    datasets.push({
+      label: 'Точка C предельной петли',
+      data: [{x:lim.Hm, y:lim.Bm, _row:'C', _mu:lim.muM}],
+      backgroundColor:'#8b2e1a', borderColor:'#8b2e1a',
+      pointRadius:7, pointHoverRadius:9,
+      showLine:false,
+      pointStyle:'rectRot'  // ромбик
+    });
+  }
+
+  bhChart = new Chart(ctx.getContext('2d'),{
+    type:'scatter',
+    data:{datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{font:{family:'DM Mono',size:11},color:'#3a5048'}},
+        tooltip:{
+          backgroundColor:'#102C26',
+          titleColor:'#F7E7CE',
+          bodyColor:'#F7E7CE',
+          titleFont:{family:'DM Sans',size:12,weight:'600'},
+          bodyFont:{family:'DM Mono',size:11},
+          padding:10,
+          callbacks:{
+            title: items => {
+              const d = items[0].raw;
+              return d._row==='C' ? 'Вершина C предельной петли' : `Точка №${d._row}`;
+            },
+            label: ctx => {
+              const d = ctx.raw;
+              const lines = [
+                `H = ${sciTooltip(d.x)} А/м`,
+                `B = ${sciTooltip(d.y)} Тл`
+              ];
+              if(isFinite(d._mu)) lines.push(`μ = ${parseFloat(d._mu.toPrecision(4))}`);
+              return lines;
+            }
+          }
+        }
+      },
+      scales:{
+        x:{
+          min:0,
+          title:{display:true, text:'H, А/м', font:{family:'DM Sans',size:12}, color:'#3a5048'},
+          ticks:{font:{family:'DM Mono',size:10}, color:'#7a9a92', callback:fmtTick},
+          grid:{color:'rgba(16,44,38,.06)'}
+        },
+        y:{
+          min:0,
+          title:{display:true, text:'B, Тл', font:{family:'DM Sans',size:12}, color:'#3a5048'},
+          ticks:{font:{family:'DM Mono',size:10}, color:'#7a9a92', callback:fmtTick},
+          grid:{color:'rgba(16,44,38,.06)'}
+        }
+      }
+    }
+  });
+}
+
+// Форматтер для tooltip — компактная экспонента
+function sciTooltip(v, sig=4){
+  if(!isFinite(v)) return '—';
+  if(v===0) return '0';
+  const av = Math.abs(v), sign = v<0 ? '−' : '';
+  if(av >= 0.01 && av < 10000){
+    return sign + parseFloat(av.toPrecision(sig)).toString();
+  }
+  const e = Math.floor(Math.log10(av));
+  const m = parseFloat((av/Math.pow(10,e)).toPrecision(sig));
+  const mFinal = m >= 10 ? parseFloat((av/Math.pow(10,e+1)).toPrecision(sig)) : m;
+  const eFinal = m >= 10 ? e+1 : e;
+  return `${sign}${mFinal}·10${toSup(String(eFinal))}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ГРАФИК μ(H) — кривая Столетова (Chart.js)
+// ═══════════════════════════════════════════════════════════
+let muChart=null;
+function setMuScale(mode, btn){
+  scaleMu = mode;
+  document.querySelectorAll('[id^="sc_mu_"]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const pts = getCurvePoints();
+  buildMuChart(pts, calcLimit());
+}
+
+function buildMuChart(pts, lim){
+  const ctx=document.getElementById('gc_mu'); if(!ctx) return;
+  if(muChart){ muChart.destroy(); muChart=null; }
+
+  const muPts = pts.filter(p=>isFinite(p.mu)&&p.mu>0);
+  const havePts = muPts.length>0;
+  const haveLim = isFinite(lim.Hm)&&isFinite(lim.muM)&&lim.muM>0;
+  if(!havePts && !haveLim){
+    const c2 = ctx.getContext('2d');
+    c2.clearRect(0,0,ctx.width,ctx.height);
+    ctx.style.display = 'none';
+    let empty = ctx.parentNode.querySelector('.ch-empty');
+    if(!empty){
+      empty = document.createElement('div');
+      empty.className = 'ch-empty';
+      empty.textContent = 'Введите данные для построения графика';
+      ctx.parentNode.appendChild(empty);
+    }
+    return;
+  }
+  ctx.style.display = 'block';
+  const empty = ctx.parentNode.querySelector('.ch-empty');
+  if(empty) empty.remove();
+
+  // Сортировка по H для непрерывной линии
+  const sorted = [...muPts].sort((a,b)=>a.H-b.H);
+
+  const datasets = [{
+    label: 'μ(H), эксперимент',
+    data: sorted.map(p=>({x:p.H, y:p.mu, _row:p.idx+1, _B:p.B})),
+    backgroundColor:'#234f44', borderColor:'#102C26',
+    pointRadius:5, pointHoverRadius:7,
+    showLine:true, borderWidth:1.5,
+    cubicInterpolationMode:'monotone'
+  }];
+
+  if(haveLim){
+    datasets.push({
+      label: 'μₘ — точка C предельной петли',
+      data: [{x:lim.Hm, y:lim.muM, _row:'C', _B:lim.Bm}],
+      backgroundColor:'#8b2e1a', borderColor:'#8b2e1a',
+      pointRadius:7, pointHoverRadius:9,
+      showLine:false,
+      pointStyle:'rectRot'
+    });
+  }
+
+  const isLog = (scaleMu === 'log');
+
+  muChart = new Chart(ctx.getContext('2d'),{
+    type:'scatter',
+    data:{datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{font:{family:'DM Mono',size:11},color:'#3a5048'}},
+        tooltip:{
+          backgroundColor:'#102C26',
+          titleColor:'#F7E7CE',
+          bodyColor:'#F7E7CE',
+          titleFont:{family:'DM Sans',size:12,weight:'600'},
+          bodyFont:{family:'DM Mono',size:11},
+          padding:10,
+          callbacks:{
+            title: items => {
+              const d = items[0].raw;
+              return d._row==='C' ? 'Вершина C предельной петли' : `Точка №${d._row}`;
+            },
+            label: ctx => {
+              const d = ctx.raw;
+              return [
+                `H = ${sciTooltip(d.x)} А/м`,
+                `μ = ${parseFloat(d.y.toPrecision(4))}`,
+                `B = ${sciTooltip(d._B)} Тл`
+              ];
+            }
+          }
+        }
+      },
+      scales:{
+        x:{
+          type: isLog ? 'logarithmic' : 'linear',
+          ...(isLog ? {} : {min:0}),  // для лог-шкалы min:0 невозможен
+          title:{display:true, text:'H, А/м', font:{family:'DM Sans',size:12}, color:'#3a5048'},
+          ticks:{font:{family:'DM Mono',size:10}, color:'#7a9a92', callback:fmtTick},
+          grid:{color:'rgba(16,44,38,.06)'}
+        },
+        y:{
+          min:0,
+          title:{display:true, text:'μ', font:{family:'DM Sans',size:12}, color:'#3a5048'},
+          ticks:{font:{family:'DM Mono',size:10}, color:'#7a9a92'},
+          grid:{color:'rgba(16,44,38,.06)'}
+        }
+      }
+    }
+  });
+}
+
+function renderMuTable(pts, lim){
+  const tbody=document.getElementById('mu-tbody'); if(!tbody) return;
+  if(!pts.length){
+    tbody.innerHTML = `<tr><td colspan="5" style="padding:20px;color:var(--ink3);font-style:italic">Нет данных в таблице основной кривой.</td></tr>`;
+    return;
+  }
+  // Найдём максимум μ среди частных петель
+  let muMaxRow=-1, muMaxVal=-Infinity;
+  pts.forEach((p,i)=>{
+    if(isFinite(p.mu) && p.mu>muMaxVal){muMaxVal=p.mu; muMaxRow=i;}
+  });
+  tbody.innerHTML = pts.map((p,i)=>{
+    const ratio = (isFinite(p.mu)&&isFinite(lim.muM)&&lim.muM>0) ? p.mu/lim.muM : NaN;
+    const cls = i===muMaxRow ? 'style="background:rgba(139,46,26,0.10)"' : '';
+    return `<tr ${cls}>
+      <td class="rn">${i+1}</td>
+      <td class="cv">${sciH(p.H,4)}</td>
+      <td class="cv">${f4(p.B)}</td>
+      <td class="cv"><b>${f4(p.mu)}</b></td>
+      <td class="cv em">${isFinite(ratio)?f4(ratio):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderMuSummary(pts, lim){
+  if(!pts.length){
+    s('mu_summary','<div class="notice warn" style="margin:0"><span>⚠</span><span>Введите данные для основной кривой.</span></div>');
+    return;
+  }
+  // Максимум μ на основной кривой
+  let muMax=-Infinity, idxMax=-1;
+  pts.forEach((p,i)=>{ if(isFinite(p.mu)&&p.mu>muMax){muMax=p.mu;idxMax=i;} });
+  const Hmax = idxMax>=0 ? pts[idxMax].H : NaN;
+  const Bmax = idxMax>=0 ? pts[idxMax].B : NaN;
+
+  let html='';
+  html += `<div class="rline"><div class="rk">μ<sub>max</sub> на основной кривой</div>
+    <div class="rv hi"><b>${f4(muMax)}</b></div>
+    <div class="ru">точка №${idxMax+1}</div></div>`;
+  html += `<div class="rline"><div class="rk">H в максимуме μ</div>
+    <div class="rv">${sciH(Hmax,4)} А/м</div></div>`;
+  html += `<div class="rline"><div class="rk">B в максимуме μ</div>
+    <div class="rv">${f4(Bmax)} Тл</div></div>`;
+  if(isFinite(lim.muM)){
+    html += `<div class="rline sep"></div>`;
+    html += `<div class="rline"><div class="rk">μ<sub>m</sub> по точке C предельной петли</div>
+      <div class="rv">${f4(lim.muM)}</div></div>`;
+    const cmp = muMax>lim.muM ? 'максимум μ на основной кривой выше μ<sub>m</sub>' :
+                muMax<lim.muM*0.95 ? 'максимум μ заметно меньше μ<sub>m</sub>' :
+                'μ<sub>max</sub> и μ<sub>m</sub> близки';
+    html += `<div class="rline"><div class="rk">μ<sub>max</sub> / μ<sub>m</sub></div>
+      <div class="rv">${f4(muMax/lim.muM)}</div>
+      <div class="ru">${cmp}</div></div>`;
+  } else {
+    html += `<div class="rline sep"></div>`;
+    html += `<div class="rline"><div class="rk" style="color:var(--ink3)">Введите координаты предельной петли, чтобы вычислить μ<sub>m</sub>.</div></div>`;
+  }
+  s('mu_summary', html);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ПРОТОКОЛ
+// ═══════════════════════════════════════════════════════════
+function buildProtocol(){
+  const p = getP();
+  const lim = calcLimit();
+  const pts = getCurvePoints();
+  let muMax=-Infinity, idxMax=-1;
+  pts.forEach((pt,i)=>{ if(isFinite(pt.mu)&&pt.mu>muMax){muMax=pt.mu;idxMax=i;} });
+
+  const D='─'.repeat(64); const L=[];
+  L.push('ПРОТОКОЛ ЛАБОРАТОРНОЙ РАБОТЫ');
+  L.push('Работа 2.06  «Гистерезис ферромагнетика»');
+  L.push('СПбПУ Петра Великого');
+  L.push(D); L.push('');
+
+  L.push('1. ИСХОДНЫЕ ДАННЫЕ (со стенда)'); L.push('');
+  L.push(`  Образец: кольцевой ферритовый сердечник прямоугольного сечения`);
+  L.push(`  n1   = ${f4(p.n1)}        витки первичной (намагничивающей) обмотки`);
+  L.push(`  n2   = ${f4(p.n2)}        витки вторичной (измерительной) обмотки`);
+  L.push(`  r    = ${sciT(p.r,4)} м    радиус средней линии`);
+  L.push(`  l    = 2*pi*r = ${sciT(p.l,4)} м`);
+  L.push(`  S    = ${sciT(p.Sm,4)} м^2  площадь сечения`);
+  L.push(`  R1   = ${f4(p.R1)} Ом       резистор первичной цепи`);
+  L.push(`  R2   = ${sciT(p.R2,4)} Ом   резистор вторичной цепи`);
+  L.push(`  C    = ${sciT(p.C,4)} Ф    интегрирующий конденсатор`);
+  L.push(`  a_x  = ${f4(p.ax)} В/дел    коэф. отклонения по X (канал H)`);
+  L.push(`  a_y  = ${f4(p.ay)} В/дел   коэф. отклонения по Y (канал B)`);
+  L.push(`  mu_0 = ${sciT(p.mu0,4)} Гн/м  магнитная постоянная`);
+  L.push('');
+
+  L.push(D);
+  L.push('2. РАСЧЁТ МАСШТАБОВ ОСЕЙ ОСЦИЛЛОГРАФА'); L.push('');
+  L.push('  Масштаб оси X (для H):');
+  L.push(`    m_x = n1 * a_x / (2*pi*r * R1)`);
+  L.push(`        = ${f4(p.n1)} * ${f4(p.ax)} / (${sciT(p.l,4)} * ${f4(p.R1)})`);
+  L.push(`        = ${sciT(p.mx,5)} А/(м*дел)`);
+  L.push('');
+  L.push('  Масштаб оси Y (для B):');
+  L.push(`    m_y = R2 * C * a_y / (S * n2)`);
+  L.push(`        = ${sciT(p.R2,4)} * ${sciT(p.C,4)} * ${f4(p.ay)} / (${sciT(p.Sm,4)} * ${f4(p.n2)})`);
+  L.push(`        = ${sciT(p.my,5)} Тл/дел`);
+  L.push('');
+
+  L.push(D);
+  L.push('3. ПРЕДЕЛЬНАЯ ПЕТЛЯ ГИСТЕРЕЗИСА'); L.push('');
+  if(isFinite(lim.twoXc)){
+    L.push(`  2x_c = ${f4(lim.twoXc)} дел   ->  x_c = ${f4(lim.xc)} дел`);
+    L.push(`  H_c = m_x * x_c = ${sciT(p.mx,4)} * ${f4(lim.xc)} = ${sciT(lim.Hc,4)} А/м`);
+    L.push('');
+  }
+  if(isFinite(lim.twoY0)){
+    L.push(`  2y_0 = ${f4(lim.twoY0)} дел   ->  y_0 = ${f4(lim.y0)} дел`);
+    L.push(`  B_0 = m_y * y_0 = ${sciT(p.my,4)} * ${f4(lim.y0)} = ${sciT(lim.B0,4)} Тл`);
+    L.push('');
+  }
+  if(isFinite(lim.xm)){
+    L.push(`  x_m = ${f4(lim.xm)} дел`);
+    L.push(`  H_m = m_x * x_m = ${sciT(p.mx,4)} * ${f4(lim.xm)} = ${sciT(lim.Hm,4)} А/м`);
+  }
+  if(isFinite(lim.ym)){
+    L.push(`  y_m = ${f4(lim.ym)} дел`);
+    L.push(`  B_m = m_y * y_m = ${sciT(p.my,4)} * ${f4(lim.ym)} = ${sciT(lim.Bm,4)} Тл`);
+  }
+  if(isFinite(lim.muM)){
+    L.push('');
+    L.push(`  mu_m = B_m / (mu_0 * H_m)`);
+    L.push(`       = ${sciT(lim.Bm,4)} / (${sciT(p.mu0,4)} * ${sciT(lim.Hm,4)})`);
+    L.push(`       = ${sciT(lim.muM,5)}`);
+  }
+  L.push('');
+
+  L.push(D);
+  L.push('4. ОСНОВНАЯ КРИВАЯ НАМАГНИЧИВАНИЯ — Таблица 6.1'); L.push('');
+  if(pts.length){
+    L.push('  Формулы: x = 2x/2, y = 2y/2;  H = m_x * x;  B = m_y * y;  mu = B/(mu_0*H)');
+    L.push('');
+    L.push('  | №  | 2x, дел | 2y, дел | H, А/м       | B, Тл    | mu     |');
+    L.push('  |----|---------|---------|--------------|----------|--------|');
+    pts.forEach((pt,i)=>{
+      L.push(`  | ${String(i+1).padEnd(2)} | ${String(f4(pt.x2)).padEnd(7)} | ${String(f4(pt.y2)).padEnd(7)} | ${sciT(pt.H,4).padEnd(12)} | ${String(f4(pt.B)).padEnd(8)} | ${String(f4(pt.mu)).padEnd(6)} |`);
+    });
+  } else {
+    L.push('  Таблица не заполнена.');
+  }
+  L.push('');
+
+  L.push(D);
+  L.push('5. КРИВАЯ СТОЛЕТОВА mu(H)'); L.push('');
+  if(pts.length && idxMax>=0){
+    L.push(`  Максимум на основной кривой: mu_max = ${sciT(muMax,5)} (точка №${idxMax+1})`);
+    L.push(`     при H = ${sciT(pts[idxMax].H,4)} А/м,  B = ${sciT(pts[idxMax].B,4)} Тл`);
+    if(isFinite(lim.muM)){
+      L.push('');
+      L.push(`  mu_m (по точке C предельной петли) = ${sciT(lim.muM,5)}`);
+      L.push(`  mu_max / mu_m = ${sciT(muMax/lim.muM,4)}`);
+    }
+  } else {
+    L.push('  Нет данных.');
+  }
+  L.push('');
+
+  L.push(D);
+  L.push('6. ИТОГОВЫЕ РЕЗУЛЬТАТЫ'); L.push('');
+  L.push(`  B_m  = ${isFinite(lim.Bm) ? sciT(lim.Bm,4)+' Тл' : '?'}      индукция насыщения`);
+  L.push(`  B_0  = ${isFinite(lim.B0) ? sciT(lim.B0,4)+' Тл' : '?'}      остаточная индукция`);
+  L.push(`  H_c  = ${isFinite(lim.Hc) ? sciT(lim.Hc,4)+' А/м' : '?'}     коэрцитивная сила`);
+  L.push(`  H_m  = ${isFinite(lim.Hm) ? sciT(lim.Hm,4)+' А/м' : '?'}     напряжённость в точке C`);
+  L.push(`  mu_m = ${isFinite(lim.muM) ? sciT(lim.muM,5) : '?'}             предельная магнитная проницаемость`);
+  L.push('');
+
+  // ── 6.1 Оценка погрешностей ──
+  L.push(D);
+  L.push('6.1 ОЦЕНКА ПОГРЕШНОСТЕЙ'); L.push('');
+  const e = getErrParams();
+  if(isFinite(e.div)){
+    const dHalf = e.div/2;
+    const dmx = Math.sqrt(e.da*e.da + e.dr*e.dr + e.dR*e.dR);
+    const dmy = Math.sqrt(e.dR*e.dR + e.dC*e.dC + e.da*e.da + e.dS*e.dS);
+    L.push(`  Источники погрешностей:`);
+    L.push(`    Δ(2x) = Δ(2y) = ${e.div} дел   (отсчёт по сетке экрана осциллографа)`);
+    L.push(`    => Δx_c = Δy_0 = Δx_m = Δy_m = ${dHalf} дел  (для половинных величин)`);
+    L.push(`    δR  = ${(e.dR*100).toFixed(1)}% (резисторы),  δC = ${(e.dC*100).toFixed(1)}% (конденсатор)`);
+    L.push(`    δr  = ${(e.dr*100).toFixed(1)}% (радиус),     δS = ${(e.dS*100).toFixed(1)}% (сечение)`);
+    L.push(`    δa  = ${(e.da*100).toFixed(1)}% (коэф. отклонения a_x, a_y)`);
+    L.push('');
+    L.push(`  Относительные погрешности масштабов:`);
+    L.push(`    δm_x = √(δa² + δr² + δR1²) = ${(dmx*100).toFixed(2)} %`);
+    L.push(`    δm_y = √(δR2² + δC² + δa² + δS²) = ${(dmy*100).toFixed(2)} %`);
+    L.push('');
+    L.push(`  Итоговые погрешности (по формуле √(δm² + δотсч²)):`);
+    let dHm=NaN, dBm=NaN;
+    if(isFinite(lim.Hc) && isFinite(lim.xc) && lim.xc>0){
+      const dxc = dHalf/lim.xc;
+      const dHc = Math.sqrt(dmx*dmx + dxc*dxc);
+      L.push(`    δH_c = √(${(dmx*100).toFixed(2)}%² + ${(dxc*100).toFixed(2)}%²) = ${(dHc*100).toFixed(2)} %`);
+      L.push(`    ΔH_c = ${(dHc*100).toFixed(2)}% · ${sciT(lim.Hc,3)} = ±${sciT(dHc*lim.Hc,3)} А/м`);
+      L.push(`    H_c = (${rdRecPlain(lim.Hc, dHc*lim.Hc)}) А/м`);
+      L.push('');
+    }
+    if(isFinite(lim.B0) && isFinite(lim.y0) && lim.y0>0){
+      const dy0 = dHalf/lim.y0;
+      const dB0 = Math.sqrt(dmy*dmy + dy0*dy0);
+      L.push(`    δB_0 = √(${(dmy*100).toFixed(2)}%² + ${(dy0*100).toFixed(2)}%²) = ${(dB0*100).toFixed(2)} %`);
+      L.push(`    ΔB_0 = ${(dB0*100).toFixed(2)}% · ${sciT(lim.B0,3)} = ±${sciT(dB0*lim.B0,3)} Тл`);
+      L.push(`    B_0 = (${rdRecPlain(lim.B0, dB0*lim.B0)}) Тл`);
+      L.push('');
+    }
+    if(isFinite(lim.Hm) && isFinite(lim.xm) && lim.xm>0){
+      const dxm = dHalf/lim.xm;
+      dHm = Math.sqrt(dmx*dmx + dxm*dxm);
+      L.push(`    δH_m = √(${(dmx*100).toFixed(2)}%² + ${(dxm*100).toFixed(2)}%²) = ${(dHm*100).toFixed(2)} %`);
+      L.push(`    ΔH_m = ${(dHm*100).toFixed(2)}% · ${sciT(lim.Hm,3)} = ±${sciT(dHm*lim.Hm,3)} А/м`);
+      L.push(`    H_m = (${rdRecPlain(lim.Hm, dHm*lim.Hm)}) А/м`);
+      L.push('');
+    }
+    if(isFinite(lim.Bm) && isFinite(lim.ym) && lim.ym>0){
+      const dym = dHalf/lim.ym;
+      dBm = Math.sqrt(dmy*dmy + dym*dym);
+      L.push(`    δB_m = √(${(dmy*100).toFixed(2)}%² + ${(dym*100).toFixed(2)}%²) = ${(dBm*100).toFixed(2)} %`);
+      L.push(`    ΔB_m = ${(dBm*100).toFixed(2)}% · ${sciT(lim.Bm,3)} = ±${sciT(dBm*lim.Bm,3)} Тл`);
+      L.push(`    B_m = (${rdRecPlain(lim.Bm, dBm*lim.Bm)}) Тл`);
+      L.push('');
+    }
+    if(isFinite(lim.muM) && isFinite(dHm) && isFinite(dBm)){
+      const dmu = Math.sqrt(dBm*dBm + dHm*dHm);
+      L.push(`    δμ_m = √(δB_m² + δH_m²) = √(${(dBm*100).toFixed(2)}%² + ${(dHm*100).toFixed(2)}%²) = ${(dmu*100).toFixed(2)} %`);
+      L.push(`    Δμ_m = ${(dmu*100).toFixed(2)}% · ${f4(lim.muM)} = ±${f4(dmu*lim.muM)}`);
+      L.push(`    μ_m  = ${rdRecPlain(lim.muM, dmu*lim.muM)}`);
+      L.push('');
+    }
+    L.push(`  Примечание: наибольший вклад в погрешности H_c и B_0 вносит погрешность отсчёта малых значений`);
+    L.push(`  x_c, y_0 (~Δотсч/значение). Для уменьшения погрешности H_c следовало бы увеличить развёртку`);
+    L.push(`  по оси X при измерении коэрцитивной силы.`);
+  } else {
+    L.push('  Параметры погрешностей не заполнены.');
+  }
+  L.push('');
+
+  L.push(D);
+  L.push('7. ВЫВОД'); L.push('');
+  L.push('  [Напишите вывод самостоятельно, опираясь на факты ниже]'); L.push('');
+  if(isFinite(lim.Bm)) L.push(`  Получена предельная петля гистерезиса с индукцией насыщения B_m = ${sciT(lim.Bm,3)} Тл,`);
+  if(isFinite(lim.B0)) L.push(`  остаточной индукцией B_0 = ${sciT(lim.B0,3)} Тл и коэрцитивной силой H_c = ${sciT(lim.Hc,3)} А/м.`);
+  if(isFinite(lim.muM)) L.push(`  Предельная магнитная проницаемость составила mu_m = ${sciT(lim.muM,4)}.`);
+  if(pts.length) L.push(`  По вершинам ${pts.length} частных петель построена основная кривая намагничивания B(H);`);
+  if(pts.length && idxMax>=0) L.push(`  на её основе зависимость mu(H) (кривая Столетова) имеет максимум mu_max ≈ ${sciT(muMax,3)}.`);
+  L.push(`  Кривая mu(H) проходит через максимум и убывает при насыщении, что соответствует теории.`);
+  L.push('');
+  L.push(D);
+  L.push('Дата выполнения: '+new Date().toLocaleDateString('ru-RU'));
+
+  document.getElementById('proto').textContent = L.join('\n');
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  UI
+// ═══════════════════════════════════════════════════════════
+function go(id, btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='curve'||id==='mu'||id==='limit') recalcAll();
+  if(id==='err') recalcErr();
+  if(id==='print') setTimeout(buildPrintPreview, 50);
+  if(id==='proto') buildProtocol();
+}
+function recalc(){ renderT1(); recalcAll(); }
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg;
+  t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'), 2200);
+}
+function copyProto(){
+  buildProtocol();
+  navigator.clipboard.writeText(document.getElementById('proto').textContent)
+    .then(()=>showToast('Скопировано ✓'));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ПОГРЕШНОСТИ — расчёт по правилу переноса для произведения/частного
+// ═══════════════════════════════════════════════════════════
+function getErrParams(){
+  const v = id => parseFloat(document.getElementById(id).value);
+  return {
+    div:  v('err_div'),         // Δ(2x), Δ(2y) в делениях
+    dR:   v('err_R')/100,       // относительная δR
+    dC:   v('err_C')/100,
+    dr:   v('err_r')/100,
+    dS:   v('err_S')/100,
+    da:   v('err_a')/100,
+  };
+}
+
+function recalcErr(){
+  const e = getErrParams();
+  if(!isFinite(e.div) || !isFinite(e.dR) || !isFinite(e.dC) ||
+     !isFinite(e.dr) || !isFinite(e.dS) || !isFinite(e.da)){
+    return;
+  }
+  const lim = calcLimit();
+
+  // Δ для половинных величин: Δx_c = Δy_0 = Δx_m = Δy_m = div/2
+  const dHalf = e.div/2;
+
+  // Относительные погрешности масштабов
+  // δm_x = √(δa² + δr² + δR1²)
+  const dmx = Math.sqrt(e.da*e.da + e.dr*e.dr + e.dR*e.dR);
+  // δm_y = √(δR2² + δC² + δa² + δS²)
+  const dmy = Math.sqrt(e.dR*e.dR + e.dC*e.dC + e.da*e.da + e.dS*e.dS);
+
+  // ── Карточка масштабов ──
+  let html='';
+  html += `<div class="rline"><div class="rk">δm<sub>x</sub> = √(δa² + δr² + δR1²) = √(${(e.da*100).toFixed(1)}%² + ${(e.dr*100).toFixed(1)}%² + ${(e.dR*100).toFixed(1)}%²)</div>
+    <div class="rv hi"><b>${(dmx*100).toFixed(2)} %</b></div></div>`;
+  html += `<div class="rline"><div class="rk">δm<sub>y</sub> = √(δR2² + δC² + δa<sub>y</sub>² + δS²)</div>
+    <div class="rv hi"><b>${(dmy*100).toFixed(2)} %</b></div></div>`;
+  s('err_scales', html);
+
+  // ── Относительные погрешности отсчёта ──
+  // x_c, y_0, x_m, y_m: значение / Δ_half
+  const reads = [];
+  if(isFinite(lim.xc) && lim.xc>0){
+    reads.push({k:'x<sub>c</sub>', val:lim.xc, d:dHalf, lbl:'дел'});
+  }
+  if(isFinite(lim.y0) && lim.y0>0){
+    reads.push({k:'y<sub>0</sub>', val:lim.y0, d:dHalf, lbl:'дел'});
+  }
+  if(isFinite(lim.xm) && lim.xm>0){
+    reads.push({k:'x<sub>m</sub>', val:lim.xm, d:dHalf, lbl:'дел'});
+  }
+  if(isFinite(lim.ym) && lim.ym>0){
+    reads.push({k:'y<sub>m</sub>', val:lim.ym, d:dHalf, lbl:'дел'});
+  }
+
+  if(!reads.length){
+    s('err_reads', '<div class="notice warn" style="margin:0"><span>⚠</span><span>Введите данные предельной петли на вкладке «Предельная петля».</span></div>');
+    s('err_results', '<div class="notice warn" style="margin:0"><span>⚠</span><span>Введите данные предельной петли.</span></div>');
+    document.getElementById('err_table').innerHTML = '<tr><td colspan="5" style="padding:20px;color:var(--ink3);font-style:italic">Введите данные предельной петли.</td></tr>';
+    return;
+  }
+
+  let rh = '';
+  reads.forEach(r => {
+    const dRel = r.d / r.val;
+    rh += `<div class="rline"><div class="rk">δ${r.k}<sub>отсч</sub> = ${r.d}/${f4(r.val)} ${r.lbl}</div>
+      <div class="rv">${(dRel*100).toFixed(2)} %</div></div>`;
+  });
+  s('err_reads', rh);
+
+  // ── Итоговые погрешности ──
+  // δH_c = √(δm_x² + δx_c²)  (если есть x_c)
+  // δB_0 = √(δm_y² + δy_0²)
+  // δH_m = √(δm_x² + δx_m²)
+  // δB_m = √(δm_y² + δy_m²)
+  // δμ_m = √(δB_m² + δH_m²)
+  const results = [];
+  function addRes(label, value, unit, dRel, formula){
+    if(!isFinite(value) || !isFinite(dRel)) return;
+    const dAbs = Math.abs(value)*dRel;
+    results.push({label, value, unit, dRel, dAbs, formula});
+  }
+
+  if(isFinite(lim.Hc) && isFinite(lim.xc) && lim.xc>0){
+    const dxc = dHalf/lim.xc;
+    const dHc = Math.sqrt(dmx*dmx + dxc*dxc);
+    addRes('H<sub>c</sub>', lim.Hc, 'А/м', dHc,
+      `δH<sub>c</sub> = √(δm<sub>x</sub>² + δx<sub>c</sub>²) = √(${(dmx*100).toFixed(2)}%² + ${(dxc*100).toFixed(2)}%²)`);
+  }
+  if(isFinite(lim.B0) && isFinite(lim.y0) && lim.y0>0){
+    const dy0 = dHalf/lim.y0;
+    const dB0 = Math.sqrt(dmy*dmy + dy0*dy0);
+    addRes('B<sub>0</sub>', lim.B0, 'Тл', dB0,
+      `δB<sub>0</sub> = √(δm<sub>y</sub>² + δy<sub>0</sub>²) = √(${(dmy*100).toFixed(2)}%² + ${(dy0*100).toFixed(2)}%²)`);
+  }
+  let dHm = NaN, dBm = NaN;
+  if(isFinite(lim.Hm) && isFinite(lim.xm) && lim.xm>0){
+    const dxm = dHalf/lim.xm;
+    dHm = Math.sqrt(dmx*dmx + dxm*dxm);
+    addRes('H<sub>m</sub>', lim.Hm, 'А/м', dHm,
+      `δH<sub>m</sub> = √(δm<sub>x</sub>² + δx<sub>m</sub>²) = √(${(dmx*100).toFixed(2)}%² + ${(dxm*100).toFixed(2)}%²)`);
+  }
+  if(isFinite(lim.Bm) && isFinite(lim.ym) && lim.ym>0){
+    const dym = dHalf/lim.ym;
+    dBm = Math.sqrt(dmy*dmy + dym*dym);
+    addRes('B<sub>m</sub>', lim.Bm, 'Тл', dBm,
+      `δB<sub>m</sub> = √(δm<sub>y</sub>² + δy<sub>m</sub>²) = √(${(dmy*100).toFixed(2)}%² + ${(dym*100).toFixed(2)}%²)`);
+  }
+  if(isFinite(lim.muM) && isFinite(dHm) && isFinite(dBm)){
+    const dmu = Math.sqrt(dBm*dBm + dHm*dHm);
+    addRes('μ<sub>m</sub>', lim.muM, '', dmu,
+      `δμ<sub>m</sub> = √(δB<sub>m</sub>² + δH<sub>m</sub>²) = √(${(dBm*100).toFixed(2)}%² + ${(dHm*100).toFixed(2)}%²)`);
+  }
+
+  // Карточка с подробными формулами
+  if(!results.length){
+    s('err_results', '<div class="notice warn" style="margin:0"><span>⚠</span><span>Нет данных для расчёта.</span></div>');
+  } else {
+    let resh = '';
+    results.forEach(r => {
+      resh += `<div class="rline"><div class="rk">${r.formula}</div>
+        <div class="rv hi"><b>${(r.dRel*100).toFixed(2)} %</b></div></div>`;
+      resh += `<div class="rline"><div class="rk">Δ${r.label} = δ × ${r.label} = ${(r.dRel*100).toFixed(2)}% · ${formatErrVal(r.value)}</div>
+        <div class="rv">±${formatErrVal(r.dAbs)} ${r.unit}</div></div>`;
+      resh += `<div class="rline sep"></div>`;
+    });
+    s('err_results', resh);
+  }
+
+  // Таблица сводная
+  if(!results.length){
+    document.getElementById('err_table').innerHTML = '<tr><td colspan="5" style="padding:20px;color:var(--ink3);font-style:italic">Нет данных.</td></tr>';
+  } else {
+    document.getElementById('err_table').innerHTML = results.map(r => {
+      const rec = roundedRecord(r.value, r.dAbs, r.unit);
+      return `<tr>
+        <td class="cv"><b>${r.label}</b></td>
+        <td class="cv">${formatErrVal(r.value)} ${r.unit}</td>
+        <td class="cv">±${formatErrVal(r.dAbs)} ${r.unit}</td>
+        <td class="cv"><b>${(r.dRel*100).toFixed(1)} %</b></td>
+        <td class="cv em" style="text-align:left;font-size:11px">${rec}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// Форматер для значений в таблице погрешностей
+function formatErrVal(v){
+  if(!isFinite(v)) return '—';
+  const av = Math.abs(v);
+  if(av === 0) return '0';
+  if(av >= 0.01 && av < 10000){
+    return parseFloat(v.toPrecision(3)).toString();
+  }
+  const e = Math.floor(Math.log10(av));
+  const m = parseFloat((av/Math.pow(10,e)).toPrecision(3));
+  const sign = v<0 ? '−' : '';
+  return `${sign}${m}·10${toSup(String(e))}`;
+}
+
+// Округление по правилам — выводим строку (X ± Δ) ед.
+function roundedRecord(v, d, unit){
+  if(!isFinite(v) || !isFinite(d) || d<=0){
+    return `${formatErrVal(v)} ${unit}`;
+  }
+  // Округлим Δ до 1-2 значащих цифр; если первая цифра — 1, оставим 2 цифры
+  const lgD = Math.floor(Math.log10(d));
+  const firstDigit = Math.floor(d/Math.pow(10, lgD));
+  const sigD = (firstDigit === 1) ? 2 : 1;
+  const dec = -lgD + sigD - 1;  // знаков после запятой
+  const dRound = parseFloat(d.toFixed(dec));
+  const vRound = parseFloat(v.toFixed(dec));
+  // Если очень большие/малые — экспонента, общий множитель
+  const av = Math.abs(v);
+  if(av >= 0.01 && av < 10000){
+    return `(${vRound} ± ${dRound}) ${unit}`;
+  }
+  // Общая экспонента — берём порядок v
+  const e = Math.floor(Math.log10(av));
+  const fact = Math.pow(10, e);
+  const vM = parseFloat((v/fact).toPrecision(3));
+  const dM = parseFloat((d/fact).toPrecision(2));
+  return `(${vM} ± ${dM})·10${toSup(String(e))} ${unit}`;
+}
+
+// Упрощённая текстовая запись (без HTML-надстрочников) для протокола в .txt
+function rdRecPlain(v, d){
+  if(!isFinite(v) || !isFinite(d) || d<=0) return String(v);
+  const lgD = Math.floor(Math.log10(d));
+  const firstDigit = Math.floor(d/Math.pow(10, lgD));
+  const sigD = (firstDigit === 1) ? 2 : 1;
+  const dec = Math.max(0, -lgD + sigD - 1);
+  const av = Math.abs(v);
+  if(av >= 0.01 && av < 10000){
+    return `${v.toFixed(dec)} ± ${d.toFixed(dec)}`;
+  }
+  const e = Math.floor(Math.log10(av));
+  const fact = Math.pow(10, e);
+  const vM = parseFloat((v/fact).toPrecision(3));
+  const dM = parseFloat((d/fact).toPrecision(2));
+  return `(${vM} ± ${dM})·10^${e}`;
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  ВКЛАДКА «ПЕЧАТЬ ГРАФИКОВ» — превью + Python-скрипт
+// ═══════════════════════════════════════════════════════════
+let prevBHChart=null, prevMuChart=null;
+
+function updPrintCaptions(){
+  const cBH = document.getElementById('vak_BH_caption').value || 'Основная кривая B(H)';
+  const nBH = parseInt(document.getElementById('vak_BH_num').value)||1;
+  const cMu = document.getElementById('vak_mu_caption').value || 'Кривая μ(H)';
+  const nMu = parseInt(document.getElementById('vak_mu_num').value)||2;
+  const eBH = document.getElementById('prev_BH_caption');
+  const eMu = document.getElementById('prev_mu_caption');
+  if(eBH) eBH.textContent = `Рис. ${nBH}. ${cBH}.`;
+  if(eMu) eMu.textContent = `Рис. ${nMu}. ${cMu}.`;
+}
+
+function buildPrintPreview(){
+  try{
+    const pts = getCurvePoints();
+    const lim = calcLimit();
+
+    // ── Превью 1: B(H) ──
+    const el1 = document.getElementById('prev_BH');
+    if(el1){
+      if(prevBHChart){ prevBHChart.destroy(); prevBHChart=null; }
+      const pw = el1.parentElement.clientWidth || 420;
+      const ph = Math.round(pw * 210/297);
+      el1.width = pw; el1.height = ph;
+
+      if(!pts.length && !(isFinite(lim.Hm)&&isFinite(lim.Bm))){
+        const ctx = el1.getContext('2d');
+        ctx.fillStyle='#f8f8f8'; ctx.fillRect(0,0,pw,ph);
+        ctx.fillStyle='#999'; ctx.font='13px serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('Введите данные на вкладке «Осн. кривая B(H)»', pw/2, ph/2);
+      } else {
+        const sorted = [...pts].sort((a,b)=>a.H-b.H);
+        const ds = [{
+          label:'B(H), эксп.',
+          data: sorted.map(p=>({x:p.H,y:p.B})),
+          borderColor:'#000', backgroundColor:'#000',
+          pointRadius:3, pointHoverRadius:4,
+          showLine:true, borderWidth:1,
+          cubicInterpolationMode:'monotone'
+        }];
+        const includeC = document.getElementById('vak_BH_lim').value==='1';
+        if(includeC && isFinite(lim.Hm) && isFinite(lim.Bm)){
+          ds.push({
+            label:'точка C',
+            data:[{x:lim.Hm,y:lim.Bm}],
+            type:'scatter',
+            borderColor:'#7d1f1f', backgroundColor:'#7d1f1f',
+            pointRadius:5, pointStyle:'rectRot',
+            showLine:false
+          });
+        }
+        prevBHChart = new Chart(el1.getContext('2d'),{
+          type:'scatter', data:{datasets:ds},
+          options:{
+            responsive:false, animation:false,
+            plugins:{
+              legend:{display:true, position:'top',
+                labels:{font:{family:'"Times New Roman",serif',size:10}, color:'#000', boxWidth:24, padding:8}},
+              title:{display:false}
+            },
+            layout:{padding:{left:8,right:12,top:4,bottom:8}},
+            scales:{
+              x:{min:0, title:{display:true,text:'H, А/м',font:{family:'"Times New Roman",serif',size:10},color:'#000'},
+                 ticks:{font:{family:'"Times New Roman",serif',size:9},color:'#000'},
+                 grid:{color:'rgba(0,0,0,0.08)'}, border:{color:'#000',width:1}},
+              y:{min:0, title:{display:true,text:'B, Тл',font:{family:'"Times New Roman",serif',size:10},color:'#000'},
+                 ticks:{font:{family:'"Times New Roman",serif',size:9},color:'#000'},
+                 grid:{color:'rgba(0,0,0,0.08)'}, border:{color:'#000',width:1}}
+            }
+          }
+        });
+      }
+    }
+
+    // ── Превью 2: μ(H) ──
+    const el2 = document.getElementById('prev_mu');
+    if(el2){
+      if(prevMuChart){ prevMuChart.destroy(); prevMuChart=null; }
+      const pw = el2.parentElement.clientWidth || 420;
+      const ph = Math.round(pw * 210/297);
+      el2.width = pw; el2.height = ph;
+
+      const muPts = pts.filter(p=>isFinite(p.mu)&&p.mu>0);
+      if(!muPts.length && !(isFinite(lim.Hm)&&isFinite(lim.muM))){
+        const ctx = el2.getContext('2d');
+        ctx.fillStyle='#f8f8f8'; ctx.fillRect(0,0,pw,ph);
+        ctx.fillStyle='#999'; ctx.font='13px serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('Введите данные на вкладке «Осн. кривая B(H)»', pw/2, ph/2);
+      } else {
+        const sorted = [...muPts].sort((a,b)=>a.H-b.H);
+        const ds = [{
+          label:'μ(H), эксп.',
+          data: sorted.map(p=>({x:p.H, y:p.mu})),
+          borderColor:'#000', backgroundColor:'#000',
+          pointRadius:3, pointHoverRadius:4,
+          showLine:true, borderWidth:1,
+          cubicInterpolationMode:'monotone'
+        }];
+        const includeC = document.getElementById('vak_mu_lim').value==='1';
+        if(includeC && isFinite(lim.Hm) && isFinite(lim.muM)){
+          ds.push({
+            label:'μₘ',
+            data:[{x:lim.Hm, y:lim.muM}],
+            type:'scatter',
+            borderColor:'#7d1f1f', backgroundColor:'#7d1f1f',
+            pointRadius:5, pointStyle:'rectRot',
+            showLine:false
+          });
+        }
+        const xScale = document.getElementById('vak_mu_xscale').value;
+        prevMuChart = new Chart(el2.getContext('2d'),{
+          type:'scatter', data:{datasets:ds},
+          options:{
+            responsive:false, animation:false,
+            plugins:{
+              legend:{display:true, position:'top',
+                labels:{font:{family:'"Times New Roman",serif',size:10}, color:'#000', boxWidth:24, padding:8}},
+              title:{display:false}
+            },
+            layout:{padding:{left:8,right:12,top:4,bottom:8}},
+            scales:{
+              x:{type:xScale==='log'?'logarithmic':'linear',
+                 ...(xScale==='log' ? {} : {min:0}),
+                 title:{display:true,text:'H, А/м',font:{family:'"Times New Roman",serif',size:10},color:'#000'},
+                 ticks:{font:{family:'"Times New Roman",serif',size:9},color:'#000'},
+                 grid:{color:'rgba(0,0,0,0.08)'}, border:{color:'#000',width:1}},
+              y:{min:0,
+                 title:{display:true,text:'μ',font:{family:'"Times New Roman",serif',size:10},color:'#000'},
+                 ticks:{font:{family:'"Times New Roman",serif',size:9},color:'#000'},
+                 grid:{color:'rgba(0,0,0,0.08)'}, border:{color:'#000',width:1}}
+            }
+          }
+        });
+      }
+    }
+
+    updPrintCaptions();
+  } catch(e){ console.error('Print preview:', e); }
+}
+
+// Реакция на изменение настроек скрипта — перерисовать превью
+['vak_BH_corner','vak_BH_lim','vak_BH_marker','vak_BH_grid',
+ 'vak_mu_corner','vak_mu_lim','vak_mu_xscale','vak_mu_grid',
+ 'vak_spline','vak_axes_from_0'].forEach(id=>{
+  document.addEventListener('change', e=>{
+    if(e.target && e.target.id===id) buildPrintPreview();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  СКАЧАТЬ PYTHON-СКРИПТ ДЛЯ ПЕЧАТНЫХ ГРАФИКОВ ВАК
+// ═══════════════════════════════════════════════════════════
+function downloadPyScript(){
+  const pts = getCurvePoints();
+  const lim = calcLimit();
+  if(!pts.length){
+    showToast('Введите данные основной кривой');
+    return;
+  }
+  const p = getP();
+
+  // Параметры из UI
+  const cBH = document.getElementById('vak_BH_caption').value || 'Основная кривая намагничивания B(H)';
+  const nBH = parseInt(document.getElementById('vak_BH_num').value)||1;
+  const legBH = document.getElementById('vak_BH_corner').value || 'lower left';
+  const limBH = document.getElementById('vak_BH_lim').value==='1';
+  const markerBH = document.getElementById('vak_BH_marker').value || 'o';
+  const gridBH = document.getElementById('vak_BH_grid').value==='1';
+
+  const cMu = document.getElementById('vak_mu_caption').value || 'Зависимость μ от H — кривая Столетова';
+  const nMu = parseInt(document.getElementById('vak_mu_num').value)||2;
+  const legMu = document.getElementById('vak_mu_corner').value || 'upper right';
+  const limMu = document.getElementById('vak_mu_lim').value==='1';
+  const xscaleMu = document.getElementById('vak_mu_xscale').value || 'linear';
+  const gridMu = document.getElementById('vak_mu_grid').value==='1';
+
+  const paper = document.getElementById('vak_paper').value || 'A4L';
+  const font = document.getElementById('vak_font').value || 'Times New Roman';
+  const dpi = parseInt(document.getElementById('vak_dpi').value)||300;
+  const splineMode = (document.getElementById('vak_spline')||{value:'monotone'}).value;
+  const fromZero = (document.getElementById('vak_axes_from_0')||{value:'1'}).value === '1';
+
+  // Размеры листа (в мм)
+  let pageW=297, pageH=210;
+  if(paper==='A4P'){ pageW=210; pageH=297; }
+  else if(paper==='A5L'){ pageW=210; pageH=148; }
+
+  // Подготовка данных для скрипта
+  const Hs = pts.map(p=>p.H);
+  const Bs = pts.map(p=>p.B);
+  const mus = pts.map(p=>p.mu);
+  // Индекс точки с μ_max — чтобы скрипт мог её отметить
+  let muMaxIdx=0, muMaxVal=-Infinity;
+  pts.forEach((pt,i)=>{ if(isFinite(pt.mu)&&pt.mu>muMaxVal){muMaxVal=pt.mu;muMaxIdx=i;} });
+
+  const Hm = isFinite(lim.Hm) ? lim.Hm : 0;
+  const Bm = isFinite(lim.Bm) ? lim.Bm : 0;
+  const muM = isFinite(lim.muM) ? lim.muM : 0;
+  const haveLim = isFinite(lim.Hm) && isFinite(lim.Bm);
+
+  const L=[];
+  L.push('# -*- coding: utf-8 -*-');
+  L.push('"""');
+  L.push('Лабораторная работа 2.06 «Гистерезис ферромагнетика»');
+  L.push('Графики B(H) и μ(H) в стиле ВАК (ГОСТ 7.32-2017).');
+  L.push('Запуск:  pip install matplotlib numpy && python plot_vak.py');
+  L.push('Выходы:  Fig'+nBH+'_BH.pdf/.png   Fig'+nMu+'_mu_H.pdf/.png');
+  L.push('"""');
+  L.push('import matplotlib');
+  L.push('matplotlib.use("Agg")');
+  L.push('import matplotlib.pyplot as plt');
+  L.push('import matplotlib.ticker as ticker');
+  L.push('import numpy as np');
+  L.push('');
+  L.push('# ── Стилевые параметры ──────────────────────────────────────');
+  L.push('plt.rcParams.update({');
+  L.push(`    "font.family":       "${font}",`);
+  L.push('    "font.size":         10,');
+  L.push('    "axes.labelsize":    10,');
+  L.push('    "xtick.labelsize":   9,');
+  L.push('    "ytick.labelsize":   9,');
+  L.push('    "legend.fontsize":   9,');
+  L.push('    "axes.linewidth":    1.0,');
+  L.push('    "lines.linewidth":   1.2,');
+  L.push('    "xtick.major.width": 1.0,');
+  L.push('    "ytick.major.width": 1.0,');
+  L.push('    "xtick.major.size":  4.0,');
+  L.push('    "ytick.major.size":  4.0,');
+  L.push('    "xtick.minor.size":  2.0,');
+  L.push('    "ytick.minor.size":  2.0,');
+  L.push('    "xtick.direction":   "in",');
+  L.push('    "ytick.direction":   "in",');
+  L.push(`    "figure.dpi":        ${dpi},`);
+  L.push(`    "savefig.dpi":       ${dpi},`);
+  L.push('    "pdf.fonttype":      42,');
+  L.push('    "ps.fonttype":       42,');
+  L.push('})');
+  L.push('');
+  L.push('# Лист и поля по ГОСТ 7.32-2017 (мм): лево=30, право=10, верх=20, низ=20');
+  L.push(`PAGE_W = ${pageW}/25.4   # дюймов`);
+  L.push(`PAGE_H = ${pageH}/25.4`);
+  L.push('BORDO  = "#7d1f1f"');
+  L.push('');
+  L.push('L_ax = 32/25.4/PAGE_W              # left  = ГОСТ 30мм + tick labels');
+  L.push('R_ax = 1 - 12/25.4/PAGE_W          # right = ГОСТ 10мм + малый pad');
+  L.push('B_ax = 36/25.4/PAGE_H              # снизу: подпись «Рис.» + ось');
+  L.push('T_ax = 1 - 22/25.4/PAGE_H          # top   = ГОСТ 20мм + малый pad');
+  L.push('');
+  L.push('# ── Данные эксперимента (24.04.2026) ────────────────────────');
+  L.push('H_data = np.array([' + Hs.map(v=>v.toExponential(5)).join(', ') + '])');
+  L.push('B_data = np.array([' + Bs.map(v=>v.toExponential(5)).join(', ') + '])');
+  L.push('mu_data = np.array([' + mus.map(v=>isFinite(v)?v.toFixed(4):'np.nan').join(', ') + '])');
+  L.push('');
+  L.push('# Сортировка по H для плавной кривой');
+  L.push('order_BH = np.argsort(H_data)');
+  L.push('H_sorted = H_data[order_BH]');
+  L.push('B_sorted = B_data[order_BH]');
+  L.push('mu_sorted = mu_data[order_BH]');
+  L.push('');
+  L.push('# Координаты вершины C предельной петли');
+  L.push(`Hm_lim = ${Hm.toExponential(5)}`);
+  L.push(`Bm_lim = ${Bm.toExponential(5)}`);
+  L.push(`muM_lim = ${muM.toFixed(4)}`);
+  L.push(`HAS_LIM = ${haveLim?'True':'False'}`);
+  L.push('');
+  L.push('# ── Монотонный кубический сплайн (PCHIP, Fritsch–Carlson 1980) ──');
+  L.push('# Не требует scipy: реализация в ~20 строк через формулы Fritsch–Carlson.');
+  L.push('# Гарантирует монотонность участков (кривая не «прострелит» точки).');
+  L.push('def pchip_curve(x, y, n=200):');
+  L.push('    """Возвращает (xs, ys) — гладкую кривую через точки (x[i], y[i])."""');
+  L.push('    x = np.asarray(x, dtype=float)');
+  L.push('    y = np.asarray(y, dtype=float)');
+  L.push('    mask = np.isfinite(x) & np.isfinite(y)');
+  L.push('    x, y = x[mask], y[mask]');
+  L.push('    if len(x) < 2:');
+  L.push('        return x, y');
+  L.push('    # Сортировка по x — обязательна для интерполяции');
+  L.push('    idx = np.argsort(x);  x = x[idx];  y = y[idx]');
+  L.push('    # Если есть совпадающие x — добавим микро-смещение');
+  L.push('    dx = np.diff(x)');
+  L.push('    if np.any(dx == 0):');
+  L.push('        eps = np.max(np.abs(x)) * 1e-9 + 1e-12');
+  L.push('        for i in range(1, len(x)):');
+  L.push('            if x[i] <= x[i-1]:');
+  L.push('                x[i] = x[i-1] + eps');
+  L.push('        dx = np.diff(x)');
+  L.push('    dy = np.diff(y)');
+  L.push('    m = dy / dx                                    # секущие наклоны');
+  L.push('    d = np.zeros_like(y)                           # касательные в узлах');
+  L.push('    # Внутренние узлы: средневзвешенный гармонический наклон Fritsch–Carlson');
+  L.push('    for i in range(1, len(x)-1):');
+  L.push('        if m[i-1]*m[i] <= 0:                       # экстремум — производная = 0');
+  L.push('            d[i] = 0.0');
+  L.push('        else:');
+  L.push('            w1 = 2*dx[i] + dx[i-1]');
+  L.push('            w2 = dx[i] + 2*dx[i-1]');
+  L.push('            d[i] = (w1 + w2) / (w1/m[i-1] + w2/m[i])');
+  L.push('    # Концы — формула Bessel (трёхточечная), затем ограничение');
+  L.push('    d[0]  = ((2*dx[0]+dx[1])*m[0] - dx[0]*m[1]) / (dx[0]+dx[1]) if len(x)>2 else m[0]');
+  L.push('    d[-1] = ((2*dx[-1]+dx[-2])*m[-1] - dx[-1]*m[-2]) / (dx[-1]+dx[-2]) if len(x)>2 else m[-1]');
+  L.push('    if len(x) > 2:');
+  L.push('        if d[0]*m[0] <= 0: d[0] = 0');
+  L.push('        elif abs(d[0]) > 3*abs(m[0]): d[0] = 3*m[0]');
+  L.push('        if d[-1]*m[-1] <= 0: d[-1] = 0');
+  L.push('        elif abs(d[-1]) > 3*abs(m[-1]): d[-1] = 3*m[-1]');
+  L.push('    # Интерполяция по эрмитовой формуле в n точках на сегмент');
+  L.push('    xs = np.linspace(x[0], x[-1], n)');
+  L.push('    ys = np.empty_like(xs)');
+  L.push('    for k, xv in enumerate(xs):');
+  L.push('        i = np.searchsorted(x, xv) - 1');
+  L.push('        i = max(0, min(i, len(x)-2))');
+  L.push('        h = x[i+1] - x[i]');
+  L.push('        t = (xv - x[i]) / h');
+  L.push('        h00 = (1+2*t)*(1-t)*(1-t)');
+  L.push('        h10 = t*(1-t)*(1-t)');
+  L.push('        h01 = t*t*(3-2*t)');
+  L.push('        h11 = t*t*(t-1)');
+  L.push('        ys[k] = h00*y[i] + h10*h*d[i] + h01*y[i+1] + h11*h*d[i+1]');
+  L.push('    return xs, ys');
+  L.push('');
+  L.push(`USE_SPLINE = ${splineMode==='monotone' ? 'True' : 'False'}`);
+  L.push(`FROM_ZERO  = ${fromZero ? 'True' : 'False'}`);
+  L.push('');
+
+  // ── ГРАФИК 1: B(H) ──
+  L.push('# ════════ Рис. '+nBH+': B(H) — основная кривая намагничивания ════════');
+  L.push('fig, ax = plt.subplots(figsize=(PAGE_W, PAGE_H))');
+  L.push('fig.subplots_adjust(left=L_ax, right=R_ax, bottom=B_ax, top=T_ax)');
+  L.push('');
+  L.push('# Маркеры в узлах + плавная кривая через них (PCHIP-сплайн)');
+  L.push('if USE_SPLINE and len(H_sorted) >= 2:');
+  L.push('    xs_BH, ys_BH = pchip_curve(H_sorted, B_sorted, n=300)');
+  L.push('    ax.plot(xs_BH, ys_BH, "-", color="k", lw=1.0)                      # гладкая кривая');
+  L.push(`    ax.plot(H_sorted, B_sorted, "${markerBH}", ms=4, color="k", mfc="k",`);
+  L.push('            label="Основная кривая B(H), эксперимент")                # узлы');
+  L.push('else:');
+  L.push(`    ax.plot(H_sorted, B_sorted, "${markerBH}-", ms=4, color="k", mfc="k", lw=1.0,`);
+  L.push('            label="Основная кривая B(H), эксперимент")');
+  if(limBH){
+    L.push('if HAS_LIM:');
+    L.push('    ax.plot([Hm_lim], [Bm_lim], "D", ms=7, color=BORDO,');
+    L.push('            mec=BORDO, mfc="white", mew=1.3,');
+    L.push(`            label=f"Точка C предельной петли: $H_m$={Hm_lim:.2f}, $B_m$={Bm_lim*1e4:.2f}·10$^{{-4}}$")`);
+    L.push('    ax.axvline(Hm_lim, color=BORDO, ls="--", lw=0.8, alpha=0.6)');
+  }
+  L.push('');
+  L.push(`ax.set_xlabel(r"$H$, А/м")`);
+  L.push(`ax.set_ylabel(r"$B$, Тл")`);
+  L.push('if FROM_ZERO:');
+  L.push('    ax.set_xlim(left=0)');
+  L.push('    ax.set_ylim(bottom=0)');
+  L.push('[ax.spines[s].set_linewidth(1.0) for s in ax.spines]');
+  L.push('ax.tick_params(which="both", top=True, right=True)');
+  L.push('ax.minorticks_on()');
+  if(gridBH){
+    L.push('ax.grid(True, which="major", ls=":", lw=0.4, color="#bbb")');
+  }
+  L.push(`ax.legend(loc="${legBH}", framealpha=0.93, edgecolor="#888")`);
+  L.push('');
+  L.push('# Подпись «Рис. N. ...» курсивом под графиком');
+  L.push(`cap1 = "Рис. ${nBH}. ${cBH.replace(/"/g,'\\"')}."`);
+  L.push('fig.text((L_ax+R_ax)/2, 16/25.4/PAGE_H, cap1,');
+  L.push('         ha="center", va="center", fontsize=10, style="italic",');
+  L.push('         transform=fig.transFigure)');
+  L.push('');
+  L.push(`fig.savefig("Fig${nBH}_BH.pdf", bbox_inches="tight", facecolor="white")`);
+  L.push(`fig.savefig("Fig${nBH}_BH.png", dpi=${dpi}, bbox_inches="tight", facecolor="white")`);
+  L.push('plt.close(fig)');
+  L.push(`print("Fig${nBH}_BH OK")`);
+  L.push('');
+
+  // ── ГРАФИК 2: μ(H) ──
+  L.push('# ════════ Рис. '+nMu+': μ(H) — кривая Столетова ════════');
+  L.push('fig, ax = plt.subplots(figsize=(PAGE_W, PAGE_H))');
+  L.push('fig.subplots_adjust(left=L_ax, right=R_ax, bottom=B_ax, top=T_ax)');
+  L.push('');
+  L.push('mask = np.isfinite(mu_sorted) & (mu_sorted > 0)');
+  L.push('H_mu = H_sorted[mask]');
+  L.push('Y_mu = mu_sorted[mask]');
+  L.push('if USE_SPLINE and len(H_mu) >= 2:');
+  L.push('    xs_mu, ys_mu = pchip_curve(H_mu, Y_mu, n=300)');
+  L.push('    ax.plot(xs_mu, ys_mu, "-", color="k", lw=1.0)');
+  L.push('    ax.plot(H_mu, Y_mu, "o", ms=4, color="k", mfc="k",');
+  L.push('            label=r"$\\mu(H)$, эксперимент")');
+  L.push('else:');
+  L.push('    ax.plot(H_mu, Y_mu, "o-", ms=4, color="k", mfc="k", lw=1.0,');
+  L.push('            label=r"$\\mu(H)$, эксперимент")');
+  if(limMu){
+    L.push('if HAS_LIM and muM_lim > 0:');
+    L.push('    ax.plot([Hm_lim], [muM_lim], "D", ms=7, color=BORDO,');
+    L.push('            mec=BORDO, mfc="white", mew=1.3,');
+    L.push('            label=fr"$\\mu_m$ = {muM_lim:.2f} (точка C)")');
+  }
+  L.push('');
+  L.push(`ax.set_xlabel(r"$H$, А/м")`);
+  L.push(`ax.set_ylabel(r"$\\mu$")`);
+  if(xscaleMu==='log'){
+    L.push('ax.set_xscale("log")');
+    L.push('# При лог-шкале X нельзя начинать от 0, но Y фиксируем');
+    L.push('if FROM_ZERO: ax.set_ylim(bottom=0)');
+  } else {
+    L.push('if FROM_ZERO:');
+    L.push('    ax.set_xlim(left=0)');
+    L.push('    ax.set_ylim(bottom=0)');
+  }
+  L.push('[ax.spines[s].set_linewidth(1.0) for s in ax.spines]');
+  L.push('ax.tick_params(which="both", top=True, right=True)');
+  L.push('ax.minorticks_on()');
+  if(gridMu){
+    L.push('ax.grid(True, which="major", ls=":", lw=0.4, color="#bbb")');
+  }
+  L.push(`ax.legend(loc="${legMu}", framealpha=0.93, edgecolor="#888")`);
+  L.push('');
+  L.push(`cap2 = "Рис. ${nMu}. ${cMu.replace(/"/g,'\\"')}."`);
+  L.push('fig.text((L_ax+R_ax)/2, 16/25.4/PAGE_H, cap2,');
+  L.push('         ha="center", va="center", fontsize=10, style="italic",');
+  L.push('         transform=fig.transFigure)');
+  L.push('');
+  L.push(`fig.savefig("Fig${nMu}_mu_H.pdf", bbox_inches="tight", facecolor="white")`);
+  L.push(`fig.savefig("Fig${nMu}_mu_H.png", dpi=${dpi}, bbox_inches="tight", facecolor="white")`);
+  L.push('plt.close(fig)');
+  L.push(`print("Fig${nMu}_mu_H OK")`);
+  L.push('');
+  L.push(`print("Готово: Fig${nBH}_BH.pdf/.png  Fig${nMu}_mu_H.pdf/.png")`);
+
+  const blob = new Blob([L.join('\n')], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.download = 'plot_vak.py';
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  showToast('plot_vak.py ✓');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ИНИЦИАЛИЗАЦИЯ
+// ═══════════════════════════════════════════════════════════
+rows = Array.from({length:10}, ()=>({x2:'', y2:''}));
+renderT1();
+updParams();
+recalcAll();
+</script>
+</body>
+</html>
